@@ -152,6 +152,10 @@ table.stats button:hover { text-decoration: underline; text-underline-offset: 2p
 .linkbox { flex: 1 1 100%; padding: 6px 8px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--panel); font: 12px var(--font-mono); }
 .osmbtn { position: absolute; right: 14px; top: 122px; z-index: 5; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel); padding: 6px 10px; cursor: pointer; font-size: 12.5px; font-weight: 500; }
 .osmbtn svg { width: 15px; height: 15px; }
+.opbox { position: absolute; right: 14px; top: 162px; z-index: 5; display: grid; grid-template-columns: auto auto; gap: 2px 8px; align-items: center; background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px; padding: 6px 10px 4px; font-size: 11.5px; color: var(--ink-2); }
+.opbox label { font-weight: 600; }
+.opbox output { font: 500 11px var(--font-mono); text-align: right; }
+.opbox input { grid-column: 1 / 3; width: 130px; accent-color: var(--ink); margin: 0; }
 .osmbtn[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
 .osmattr { position: absolute; right: 0; bottom: 0; z-index: 5; background: color-mix(in srgb, var(--panel) 85%, transparent); font-size: 11px; padding: 2px 6px; border-top-left-radius: 6px; }
 .osmattr a { color: var(--ink-2); }
@@ -211,6 +215,7 @@ ol.rank .sc { font: 500 14px var(--font-mono); text-align: right; }
 ol.rank .sc small { display: block; font: 400 10.5px var(--font-body); color: var(--ink-3); }
 ol.rank .why { grid-column: 2 / 4; display: flex; gap: 6px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-2); }
 ol.rank .why span { background: var(--chip); border-radius: 4px; padding: 1px 6px; }
+ol.rank.odd li { grid-template-columns: 34px minmax(0, 1fr) 0; }
 .devs { grid-column: 2 / 4; width: 100%; height: 26px; display: block; }
 .simempty { padding: 18px; color: var(--ink-2); }
 
@@ -268,6 +273,8 @@ ol.rank .why span { background: var(--chip); border-radius: 4px; padding: 1px 6p
   .legend .s { display: none; }
   .zoom { right: 8px; top: 8px; }
   .osmbtn { right: 8px; top: 112px; padding: 8px; }
+  .opbox { right: 8px; top: 150px; }
+  .opbox input { width: 96px; }
   .osmbtn span { display: none; }
   .viewbar .ctx { display: none; }
   .tabs button { padding: 7px 9px; }
@@ -321,6 +328,7 @@ ol.rank .why span { background: var(--chip); border-radius: 4px; padding: 1px 6p
         <button type="button" role="tab" data-view="map"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1.5 3.5l4-1.5 5 2 4-1.5v10l-4 1.5-5-2-4 1.5z"/><path d="M5.5 2v10M10.5 4v10"/></svg><span data-t="view_map"></span></button>
         <button type="button" role="tab" data-view="list"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5.5 4h9M5.5 8h9M5.5 12h9"/><circle cx="2.5" cy="4" r=".9" fill="currentColor"/><circle cx="2.5" cy="8" r=".9" fill="currentColor"/><circle cx="2.5" cy="12" r=".9" fill="currentColor"/></svg><span data-t="view_list"></span></button>
         <button type="button" role="tab" data-view="sim"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><circle cx="8" cy="8" r="3.2"/><circle cx="8" cy="8" r=".8" fill="currentColor"/></svg><span data-t="view_sim"></span></button>
+        <button type="button" role="tab" data-view="odd"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 3.5c1.5-1 3-1 4 .5s2.5 1.5 4 .5l1.5 1-1 3 1.5 2.5-2 2-3-1-2.5 1.5-1.5-2 .5-3-2-1.5z"/></svg><span data-t="view_odd"></span></button>
       </div>
       <span class="ctx" id="ctx"></span>
       <button type="button" class="btn linkbtn2" id="copylink"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6.5 9.5l3-3"/><path d="M7 4.5l1.2-1.2a2.8 2.8 0 014 4L11 8.5"/><path d="M9 11.5l-1.2 1.2a2.8 2.8 0 01-4-4L5 7.5"/></svg><span data-t="copy_link"></span></button>
@@ -328,6 +336,7 @@ ol.rank .why span { background: var(--chip); border-radius: 4px; padding: 1px 6p
     </div>
     <div class="views" id="views">
       <section class="pane" id="simpane" hidden></section>
+      <section class="pane" id="oddpane" hidden></section>
       <section class="pane" id="listpane" hidden>
         <div class="listbar">
           <div class="filterwrap">
@@ -348,6 +357,7 @@ ol.rank .why span { background: var(--chip); border-radius: 4px; padding: 1px 6p
       <div class="mapwrap" id="mapwrap">
         <div id="map" role="region"></div>
         <button type="button" class="osmbtn" id="osmbtn" aria-pressed="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 2l6 3-6 3-6-3z"/><path d="M2 8l6 3 6-3"/><path d="M2 11l6 3 6-3"/></svg><span data-t="osm"></span></button>
+        <div class="opbox"><label for="opacity" data-t="opacity"></label><input type="range" id="opacity" min="10" max="100" step="5" value="100"><output id="opval" for="opacity">100 %</output></div>
         <div class="osmattr" id="osmattr" hidden><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" data-t="osm_attr"></a></div>
         <div class="zoom">
           <button type="button" id="zin">+</button>
@@ -378,7 +388,27 @@ const T = {
     lvl_lan: "Län", lvl_kommun: "Kommun", lvl_vd: "Valdistrikt", lvl_riket: "Hela landet",
     plural_lan: "län", plural_kommun: "kommuner", plural_vd: "valdistrikt",
     county_suffix: "län", sweden: "Sverige",
-    view_map: "Karta", view_list: "Lista", view_sim: "Mest lik Sverige",
+    view_map: "Karta", view_list: "Lista", view_sim: "Mest lik Sverige", view_odd: "Udda distrikt",
+    odd_title: "Udda distrikt", odd_pick: "Visa", odd_g_shape: "Form och gränser", odd_g_vote: "Valresultat", odd_g_size: "Storlek",
+    odd_only_vd: "Gäller valdistrikt – visar valdistrikten.", odd_legend: "Markerade: de {n} första i listan", odd_none: "Inga områden uppfyller det här.",
+    oc_exclave: "Utspridda distrikt (exklaver)", oc_exclave_d: "Distrikt som består av flera delar med andra distrikt emellan. Sorterat efter hur långt bort den mest avlägsna delen ligger. Öar i havet räknas inte, bara delar som omges av andra distrikt.",
+    oc_exclave_t: "{n} del(ar) utanför huvuddelen · längst bort {gap} km",
+    oc_enclave: "Distrikt inuti ett annat (enklaver)", oc_enclave_d: "Distrikt som helt omges av ett enda annat distrikt, som ett hål i en munk.", oc_enclave_t: "ligger helt inuti {h}",
+    oc_hosts: "Distrikt med andra distrikt inuti", oc_hosts_d: "Munken själv: distrikt som helt omsluter ett eller flera andra distrikt.", oc_hosts_t: "omsluter {n} distrikt",
+    oc_stretched: "Mest utdragna", oc_stretched_d: "Längsta sida delat med kortaste sida för den minsta rektangel som rymmer distriktet.", oc_stretched_t: "{v} gånger så långt som brett",
+    oc_jagged: "Mest oregelbunden form", oc_jagged_d: "Polsby–Popper-kompakthet: 4π · yta / omkrets². En cirkel får 1, slingriga eller taggiga gränser hamnar nära 0.", oc_jagged_t: "kompakthet {v}",
+    oc_neighbours: "Flest grannar", oc_neighbours_d: "Antal andra distrikt som distriktet delar gräns med.", oc_neighbours_t: "{v} grannar",
+    oc_maxparty: "Ett parti dominerar", oc_maxparty_d: "Högsta andel för ett enskilt parti.", oc_maxparty_t: "{k} {v}",
+    oc_closest: "Jämnast mellan de två största", oc_closest_d: "Minst skillnad i antal röster mellan största och näst största parti. Oavgjort först.", oc_closest_t: "{a} mot {b} – {d}",
+    oc_tie: "oavgjort", oc_votes: "{n} röster", oc_vote1: "1 röst",
+    oc_zero: "Partier utan en enda röst", oc_zero_d: "Områden där ett eller flera av riksdagspartierna inte fick någon röst alls.", oc_zero_t: "0 röster: {p}",
+    oc_alone: "Ensam i kommunen", oc_alone_d: "Distrikt där största partiet inte är störst i något annat distrikt i samma kommun.", oc_alone_t: "{k} störst – i övriga kommunen: {o}",
+    oc_unlike: "Mest olik sin kommun", oc_unlike_d: "Avvikelseindex mot den egna kommunens resultat: så stor andel av rösterna hade behövt byta parti för att distriktet skulle rösta som kommunen.", oc_unlike_t: "{v} % av rösterna skiljer",
+    oc_swing: "Största svängningen", oc_swing_d: "Största förändringen för ett parti sedan förra valet, i procentenheter. Bara jämförbara områden.", oc_swing_t: "{k} {v} p.e. sedan {p}",
+    oc_turnhi: "Högst valdeltagande", oc_turnhi_d: "Andel röstberättigade som röstade.", oc_turnlo: "Lägst valdeltagande", oc_turnlo_d: "Andel röstberättigade som röstade.", oc_turn_t: "{v} valdeltagande",
+    oc_blank: "Flest blankröster", oc_blank_d: "Blanka röster som andel av alla avgivna röster.", oc_blank_t: "{v} blankt",
+    oc_big: "Störst yta", oc_big_d: "Distriktets yta, sjöar och hav inräknade där de ingår i distriktet.", oc_small: "Minst yta", oc_small_d: "Distriktets yta.", oc_area_t: "{v} km²",
+    oc_most: "Flest röstberättigade", oc_most_d: "Antal röstberättigade.", oc_fewest: "Färst röstberättigade", oc_fewest_d: "Antal röstberättigade.", oc_elig_t: "{v} röstberättigade",
     search_ph: "Sök kommun eller valdistrikt", no_match: "Ingen träff",
     grp_result: "Valresultat", grp_sim: "Likhet med riket", grp_stats: "Statistik (SCB)",
     m_winner: "Största parti", m_share: "Partiets andel", m_change: "Partiets förändring sedan {p}",
@@ -405,7 +435,7 @@ const T = {
     scatter_none: "Statistik saknas för den här nivån och det här valet.",
     scatter_none_old: "Statistiken finns bara för 2026 års valdistrikt, så diagrammet är tomt för valdistrikt i tidigare val. Välj 2026, eller kommuner eller län.",
     sel_missing: " {n} saknar uppgift för den här kombinationen och syns därför inte.",
-    copy_link: "Kopiera länk", link_copied: "Länken kopierad", link_select: "Markera och kopiera",
+    opacity: "Färgstyrka", copy_link: "Kopiera länk", link_copied: "Länken kopierad", link_select: "Markera och kopiera",
     osm: "Bakgrundskarta", osm_title: "Visa OpenStreetMap under valkartan",
     osm_failed: "Bakgrundskartan kunde inte laddas här. Den visas när sidan körs på en egen webbplats.",
     osm_attr: "© OpenStreetMap-bidragsgivare",
@@ -450,7 +480,27 @@ const T = {
     lvl_lan: "County", lvl_kommun: "Municipality", lvl_vd: "Voting district", lvl_riket: "Whole country",
     plural_lan: "counties", plural_kommun: "municipalities", plural_vd: "districts",
     county_suffix: "county", sweden: "Sweden",
-    view_map: "Map", view_list: "List", view_sim: "Most like Sweden",
+    view_map: "Map", view_list: "List", view_sim: "Most like Sweden", view_odd: "Odd districts",
+    odd_title: "Odd districts", odd_pick: "Show", odd_g_shape: "Shape and borders", odd_g_vote: "Results", odd_g_size: "Size",
+    odd_only_vd: "Applies to voting districts – showing districts.", odd_legend: "Highlighted: the first {n} in the list", odd_none: "No areas match this.",
+    oc_exclave: "Scattered districts (exclaves)", oc_exclave_d: "Districts made of several pieces with other districts in between, sorted by how far away the most distant piece is. Islands in the sea don't count, only pieces surrounded by other districts.",
+    oc_exclave_t: "{n} piece(s) outside the main part · farthest {gap} km away",
+    oc_enclave: "Districts inside another (enclaves)", oc_enclave_d: "Districts completely surrounded by one other district, like the hole in a doughnut.", oc_enclave_t: "lies entirely inside {h}",
+    oc_hosts: "Districts with others inside", oc_hosts_d: "The doughnut itself: districts that completely enclose one or more other districts.", oc_hosts_t: "encloses {n} district(s)",
+    oc_stretched: "Most stretched", oc_stretched_d: "Longest side divided by shortest side of the smallest rectangle that fits around the district.", oc_stretched_t: "{v} times as long as it is wide",
+    oc_jagged: "Most irregular shape", oc_jagged_d: "Polsby–Popper compactness: 4π · area / perimeter². A circle scores 1; winding or jagged borders score close to 0.", oc_jagged_t: "compactness {v}",
+    oc_neighbours: "Most neighbours", oc_neighbours_d: "Number of other districts sharing a border.", oc_neighbours_t: "{v} neighbours",
+    oc_maxparty: "One party dominates", oc_maxparty_d: "Highest share for any single party.", oc_maxparty_t: "{k} {v}",
+    oc_closest: "Closest race between the top two", oc_closest_d: "Smallest gap in votes between the largest and second-largest party. Ties first.", oc_closest_t: "{a} vs {b} – {d}",
+    oc_tie: "a tie", oc_votes: "{n} votes", oc_vote1: "1 vote",
+    oc_zero: "Parties with not a single vote", oc_zero_d: "Areas where one or more Riksdag parties got no votes at all.", oc_zero_t: "0 votes: {p}",
+    oc_alone: "Alone in its municipality", oc_alone_d: "Districts whose largest party is not the largest in any other district of the same municipality.", oc_alone_t: "{k} largest – rest of municipality: {o}",
+    oc_unlike: "Least like its municipality", oc_unlike_d: "Index of dissimilarity against its own municipality's result: the share of votes that would have to switch party for the district to vote like the municipality.", oc_unlike_t: "{v}% of votes differ",
+    oc_swing: "Biggest swing", oc_swing_d: "Largest change for one party since the previous election, in percentage points. Comparable areas only.", oc_swing_t: "{k} {v} pp since {p}",
+    oc_turnhi: "Highest turnout", oc_turnhi_d: "Share of eligible voters who voted.", oc_turnlo: "Lowest turnout", oc_turnlo_d: "Share of eligible voters who voted.", oc_turn_t: "{v} turnout",
+    oc_blank: "Most blank votes", oc_blank_d: "Blank votes as a share of all votes cast.", oc_blank_t: "{v} blank",
+    oc_big: "Largest area", oc_big_d: "The district's area, including lakes and sea where they are part of it.", oc_small: "Smallest area", oc_small_d: "The district's area.", oc_area_t: "{v} km²",
+    oc_most: "Most eligible voters", oc_most_d: "Number of eligible voters.", oc_fewest: "Fewest eligible voters", oc_fewest_d: "Number of eligible voters.", oc_elig_t: "{v} eligible voters",
     search_ph: "Find a municipality or district", no_match: "No match",
     grp_result: "Election result", grp_sim: "Similarity to Sweden", grp_stats: "Statistics (SCB)",
     m_winner: "Largest party", m_share: "Party share", m_change: "Party change since {p}",
@@ -477,7 +527,7 @@ const T = {
     scatter_none: "No statistics for this level and election.",
     scatter_none_old: "Statistics exist only for the 2026 districts, so the chart is empty for districts in earlier elections. Choose 2026, or municipalities or counties.",
     sel_missing: " {n} has no value for this combination, so it isn't shown.",
-    copy_link: "Copy link", link_copied: "Link copied", link_select: "Select and copy",
+    opacity: "Colour opacity", copy_link: "Copy link", link_copied: "Link copied", link_select: "Select and copy",
     osm: "Background map", osm_title: "Show OpenStreetMap under the election map",
     osm_failed: "The background map could not load here. It appears when the page runs on your own website.",
     osm_attr: "© OpenStreetMap contributors",
@@ -526,8 +576,8 @@ const loc = () => lang === "sv" ? "sv-SE" : "en-US";
 // ======================================================================
 const GOV = ["M", "KD", "L", "SD"], OPP = ["S", "V", "MP", "C"];
 const state = { year: 2026, view: "map", level: "kommun", mode: "winner", party: "S", sel: null, scX: "inc", scY: "S",
-  simKind: "vote", simAvg: false, simLeast: false, simLimit: 50, cols: "res", sort: { key: "name", dir: 1 }, lfilter: "", llimit: 300, osm: false };
-let META, ST, PI = {}, RES = {}, GEO26, map, mapReady = false, byId = { lan: {}, kommun: {}, vd: {} }, VDGEO = {}, hoverId = null, scale = null;
+  simKind: "vote", simAvg: false, simLeast: false, simLimit: 50, cols: "res", sort: { key: "name", dir: 1 }, lfilter: "", llimit: 300, osm: false, op: 100, odd: "exclave", oddLimit: 50 };
+let META, ST, PI = {}, RES = {}, GEO26, map, mapReady = false, byId = { lan: {}, kommun: {}, vd: {} }, GEOY = {}, hoverId = null, scale = null;
 const $ = (s) => document.querySelector(s);
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const nf = (d) => (n) => n == null || isNaN(n) ? "–" : n.toLocaleString(loc(), { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -609,7 +659,7 @@ function simDemo(level, id, detail = false) {
   return detail ? { d, devs: devs.sort((x, y) => Math.abs(y.z) - Math.abs(x.z)) } : d;
 }
 
-function curMode() { return state.view === "sim" ? (state.simKind === "vote" ? "simvote" : "simdemo") : state.mode; }
+function curMode() { return state.view === "sim" ? (state.simKind === "vote" ? "simvote" : "simdemo") : state.view === "odd" ? "odd" : state.mode; }
 function metricValue(level, id, mode = curMode()) {
   const r = rec(level, id);
   switch (mode) {
@@ -621,6 +671,7 @@ function metricValue(level, id, mode = curMode()) {
     case "winner": return winner(r);
     case "simvote": return simVote(level, id);
     case "simdemo": return simDemo(level, id);
+    case "odd": return ODD_SET.get(id) || null;
     default: { const s = statsOf(level, id); return s ? s[mode.slice(5)] ?? null : null; }
   }
 }
@@ -635,6 +686,7 @@ function metricLabel(mode = curMode()) {
     case "bloc": return t("m_bloc");
     case "simvote": return t("sim_vote_lbl") + (lang === "sv" ? " (procent av rösterna)" : " (% of votes)");
     case "simdemo": return t("sim_demo_lbl") + (lang === "sv" ? " (standardavvikelser)" : " (standard deviations)");
+    case "odd": return t("oc_" + state.odd);
     default: { const d = statDef(mode.slice(5)); return statName(d) + (statUnit(d) ? ` (${statUnit(d)})` : ""); }
   }
 }
@@ -647,6 +699,7 @@ function fmtMetric(v, mode = curMode()) {
     case "change": case "turnoutchg": case "bloc": return sgn(v) + " " + t("pp");
     case "simvote": return fmt1(v) + (lang === "sv" ? " %" : "%");
     case "simdemo": return fmt2(v);
+    case "odd": return v.txt;
     default: return fmtStat(mode.slice(5), v);
   }
 }
@@ -657,6 +710,10 @@ function fmtMetric(v, mode = curMode()) {
 function levelIds(level = state.level) { return Object.keys(level === "vd" ? byId.vd : R()[level]); }
 function buildScale() {
   const mode = curMode(), lvl = state.level, ids = levelIds();
+  if (mode === "odd") {
+    const hl = isDark() ? "#f2994a" : "#d4570f", rest = isDark() ? "#3a3e42" : "#e3e4df";
+    return { type: "odd", color: (v) => v ? (v.party && state.odd !== "zero" ? META.parties[PI[v.party]].c : hl) : rest };
+  }
   if (mode === "winner") {
     const present = new Set(ids.map((id) => winner(rec(lvl, id))?.k).filter(Boolean));
     return { type: "cat", present, color: (v) => { if (!v) return null; const c = META.parties[PI[v.k]].c; const k = v.s < 30 ? .42 : v.s < 40 ? .62 : v.s < 50 ? .82 : 1; return mix(base(), c, k); } };
@@ -740,7 +797,13 @@ function initMap(fc) {
 // ---- OpenStreetMap background ----
 const OSM_TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 let osmFailed = false;
-function fillOpacity() { const hover = ["boolean", ["feature-state", "hover"], false]; return state.osm ? ["case", hover, 0.35, 0.55] : ["case", hover, 0.78, 1]; }
+function fillOpacity() { const o = state.op / 100; return ["case", ["boolean", ["feature-state", "hover"], false], Math.max(0.05, o * 0.75), o]; }
+function setOpacity(v, write = true) {
+  state.op = Math.max(0, Math.min(100, Math.round(v)));
+  $("#opacity").value = state.op; $("#opval").textContent = state.op + " %";
+  if (mapReady) for (const l of LEVELS) map.setPaintProperty(`${l}-fill`, "fill-opacity", fillOpacity());
+  if (write) writeHash();
+}
 function osmPaint() { return isDark() ? { "raster-brightness-max": 0.55, "raster-saturation": -0.6, "raster-contrast": 0.1 } : { "raster-brightness-max": 1, "raster-saturation": -0.35, "raster-contrast": 0 }; }
 function addOsm() {
   if (!map.getSource("osm")) {
@@ -750,6 +813,7 @@ function addOsm() {
   map.setLayoutProperty("osm", "visibility", "visible");
 }
 function setOsm(on) {
+  if (on && !state.osm && state.op === 100) setOpacity(60, false);   // let the background show through
   state.osm = on; osmFailed = false;
   $("#osmbtn").setAttribute("aria-pressed", on); $("#osmattr").hidden = !on;
   if (mapReady) {
@@ -766,17 +830,20 @@ function encodeHash() {
   const tk = [state.view, "y" + state.year, state.level, "m-" + state.mode.replace(":", "-"), "p-" + state.party];
   if (state.sel) tk.push("s-" + state.sel.lvl + "-" + state.sel.id);
   if (state.view === "list") tk.push("c-" + state.cols);
+  if (state.view === "odd") tk.push("q-" + state.odd);
   if (state.view === "sim") { tk.push("k-" + state.simKind); if (state.simAvg) tk.push("avg"); if (state.simLeast) tk.push("least"); }
   if (state.scX !== "inc") tk.push("sx-" + state.scX);
   if (state.scY !== state.party) tk.push("sy-" + state.scY.replace("_", ""));
   if (state.osm) tk.push("osm");
+  if (state.op !== 100) tk.push("o-" + state.op);
   if (lang === "en") tk.push("en");
   return tk.join(".");
 }
 function parseHash(h) {
   const o = {};
   for (const tk of (h || "").replace(/^#/, "").split(".").filter(Boolean)) {
-    if (["map", "list", "sim"].includes(tk)) o.view = tk;
+    if (["map", "list", "sim", "odd"].includes(tk)) o.view = tk;
+    else if (tk.startsWith("q-")) o.odd = tk.slice(2);
     else if (/^y\d{4}$/.test(tk)) o.year = +tk.slice(1);
     else if (["lan", "kommun", "vd"].includes(tk)) o.level = tk;
     else if (tk.startsWith("m-")) o.mode = tk.slice(2).replace(/^stat-/, "stat:");
@@ -789,6 +856,7 @@ function parseHash(h) {
     else if (tk === "avg") o.simAvg = true;
     else if (tk === "least") o.simLeast = true;
     else if (tk === "osm") o.osm = true;
+    else if (/^o-\d{1,3}$/.test(tk)) o.op = +tk.slice(2);
     else if (tk === "en" || tk === "sv") o.lang = tk;
   }
   return o;
@@ -804,9 +872,11 @@ function applyParsed(o) {
   state.scY = state.party;
   if (["res", "chg", "stat", "sim"].includes(o.cols)) state.cols = o.cols;
   if (["vote", "demo"].includes(o.simKind)) state.simKind = o.simKind;
+  if (o.odd && ODD_CATS[o.odd]) state.odd = o.odd;
   if (META.stats.some((x) => x.k === o.scX)) state.scX = o.scX; else if (state.mode.startsWith("stat:")) state.scX = state.mode.slice(5);
   if (o.scY && (P.includes(o.scY) || o.scY === "_turnout")) state.scY = o.scY;
   state.simAvg = !!o.simAvg; state.simLeast = !!o.simLeast; state.osm = !!o.osm;
+  state.op = o.op != null && o.op >= 0 && o.op <= 100 ? o.op : 100;
   if (o.lang) lang = o.lang;
   state.sel = o.sel && ["lan", "kommun", "vd"].includes(o.sel.lvl) && o.sel.id ? o.sel : null;
 }
@@ -878,6 +948,7 @@ function renderLegend() {
     h += `<div class="lg-bins">` + s.colors.map((c, i) => `<div><i style="background:${c}"></i><span>${esc(fm(s.edges[i]))}</span></div>`).join("") + `</div>`;
     if (s.ends) h += `<div class="lg-ends"><span>${esc(s.ends[0])}</span><span>${esc(s.ends[1])}</span></div>`;
   }
+  if (s.type === "odd") { el.innerHTML = h + `<div class="s" style="margin-top:0">${esc(t("odd_legend", { n: fmtInt(ODD_SET.size) }))}</div>`; return; }
   const missing = levelIds().some((id) => metricValue(state.level, id) == null);
   if (missing) h += `<div class="lg-cats" style="margin-top:6px"><span><i style="background:var(--nodata);box-shadow:inset 0 0 0 1px var(--line-strong)"></i>${esc(t("no_data"))}</span></div>`;
   const notes = [];
@@ -906,6 +977,7 @@ function select(lvl, id, zoom = true, from = "other") {
   renderDetail();
   if (state.view === "list") markListSel(from !== "list");
   if (state.view === "sim") markSimSel(from !== "sim");
+  if (state.view === "odd") markOddSel(from !== "odd");
   const sc = $(".side-scroll"); if (sc && sc.scrollHeight > sc.clientHeight) sc.scrollTop = 0;
   writeHash();
 }
@@ -916,19 +988,22 @@ function select(lvl, id, zoom = true, from = "other") {
 const getJSON = (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(t("err_data", { s: u + " " + r.status })); return r.json(); });
 async function loadYear(y) {
   if (!RES[y]) RES[y] = await getJSON(`data/results_${y}.json`);
-  if (!VDGEO[y]) {
-    if (y === 2026) VDGEO[y] = topoToFC(GEO26, "vd", "id");
-    else { const topo = await getJSON(`data/geo_vd_${y}.json`); VDGEO[y] = topoToFC(topo, "vd", "id"); }
+  if (!GEOY[y]) {
+    // each election has its own districts; municipality and county borders are dissolved from them so lines match
+    const topo = y === 2026 ? GEO26 : await getJSON(`data/geo_vd_${y}.json`);
+    GEOY[y] = { vd: topoToFC(topo, "vd", "id"), kommun: topoToFC(topo, "kommun", "k"), lan: topoToFC(topo, "lan", "l") };
   }
 }
+function useGeo(y) { for (const l of LEVELS) byId[l] = Object.fromEntries(GEOY[y][l].features.map((f) => [f.properties.id, f])); }
 async function loadAllYears() { await Promise.all(META.years.map((y) => RES[y] ? null : getJSON(`data/results_${y}.json`).then((d) => { RES[y] = d; }))); }
 async function setYear(y) {
   const soft = $("#loading"); soft.classList.add("soft"); $("#loadmsg").textContent = t("loading_year", { y }); soft.hidden = false;
   try { await loadYear(y); } catch (e) { $("#loadmsg").textContent = e.message; return; }
   state.year = y;
-  byId.vd = Object.fromEntries(VDGEO[y].features.map((f) => [f.properties.id, f]));
-  if (state.sel && state.sel.lvl === "vd" && !byId.vd[state.sel.id]) state.sel = null;
-  if (mapReady) { clearHover(); map.getSource("vd").setData(VDGEO[y]); applySelection(); }
+  useGeo(y);
+  if (state.view === "odd" && state.level === "vd") await loadOdd(y);
+  if (state.sel && !byId[state.sel.lvl][state.sel.id]) state.sel = null;
+  if (mapReady) { clearHover(); for (const l of LEVELS) map.getSource(l).setData(GEOY[y][l]); applySelection(); }
   soft.hidden = true; soft.classList.remove("soft");
   document.querySelectorAll("#year button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.y === y));
   buildSearchIndex(); refreshAll();
@@ -1251,6 +1326,85 @@ function markSimSel(scroll = false) {
 }
 
 // ======================================================================
+// Odd districts
+// ======================================================================
+const ODD = {};
+async function loadOdd(y) { if (!ODD[y]) { try { ODD[y] = await getJSON(`data/odd_${y}.json`); } catch (e) { ODD[y] = {}; } } }
+const MAINP = ["S", "M", "SD", "V", "C", "KD", "MP", "L"];
+function topTwo(r) { const a = MAINP.map((k) => [k, r.pv[PI[k]]]).sort((x, y) => y[1] - x[1]); return a; }
+function kommunOf(id) { return (rec("vd", id) || byId.vd[id]?.properties)?.k; }
+// each category: group, vd-only?, value(level, id) -> {v, txt} | null, ascending?
+const ODD_CATS = {
+  exclave: { g: "shape", vd: true, f: (L, id) => { const o = ODD[state.year]?.[id]; return o && o.ex ? { v: o.gap, txt: t("oc_exclave_t", { n: o.ex, gap: fmt1(o.gap) }) } : null; } },
+  enclave: { g: "shape", vd: true, asc: true, f: (L, id) => { const o = ODD[state.year]?.[id]; return o && o.enc ? { v: o.km2, txt: t("oc_enclave_t", { h: areaName("vd", o.enc) }) } : null; } },
+  hosts: { g: "shape", vd: true, f: (L, id) => { const o = ODD[state.year]?.[id]; return o && o.hosts ? { v: o.hosts, txt: t("oc_hosts_t", { n: o.hosts }) } : null; } },
+  stretched: { g: "shape", vd: true, f: (L, id) => { const o = ODD[state.year]?.[id]; return o && o.el ? { v: o.el, txt: t("oc_stretched_t", { v: fmt1(o.el) }) } : null; } },
+  jagged: { g: "shape", vd: true, asc: true, f: (L, id) => { const o = ODD[state.year]?.[id]; return o && o.pp != null ? { v: o.pp, txt: t("oc_jagged_t", { v: fmt2(o.pp) }) } : null; } },
+  neighbours: { g: "shape", vd: true, f: (L, id) => { const o = ODD[state.year]?.[id]; return o ? { v: o.nb, txt: t("oc_neighbours_t", { v: o.nb }) } : null; } },
+  maxparty: { g: "vote", f: (L, id) => { const r = rec(L, id); if (!r || !r.v) return null; const [k, n] = topTwo(r)[0]; const v = 100 * n / r.v; return { v, txt: t("oc_maxparty_t", { k, v: pct(v) }), party: k }; } },
+  closest: { g: "vote", asc: true, f: (L, id) => { const r = rec(L, id); if (!r || !r.v) return null; const [[a, x], [b, y]] = topTwo(r); const d = x - y;
+    return { v: d + (x ? 0 : 1e9), txt: t("oc_closest_t", { a: `${a} ${fmtInt(x)}`, b: `${b} ${fmtInt(y)}`, d: d === 0 ? t("oc_tie") : d === 1 ? t("oc_vote1") : t("oc_votes", { n: fmtInt(d) }) }), party: a }; } },
+  zero: { g: "vote", f: (L, id) => { const r = rec(L, id); if (!r || !r.v) return null; const z = MAINP.filter((k) => r.pv[PI[k]] === 0); return z.length ? { v: z.length * 1e6 + r.v, txt: t("oc_zero_t", { p: z.join(", ") }) } : null; } },
+  alone: { g: "vote", vd: true, f: (L, id) => {
+    const k = kommunOf(id), r = rec("vd", id); if (!k || !r || !r.v) return null;
+    const w = topTwo(r)[0][0], others = levelIds("vd").filter((i) => i !== id && kommunOf(i) === k).map((i) => rec("vd", i)).filter((x) => x && x.v);
+    if (others.length < 3 || others.some((o) => topTwo(o)[0][0] === w)) return null;
+    const ow = [...new Set(others.map((o) => topTwo(o)[0][0]))].join(", ");
+    return { v: others.length, txt: t("oc_alone_t", { k: w, o: ow }), party: w }; } },
+  unlike: { g: "vote", vd: true, f: (L, id) => { const r = rec("vd", id), k = kommunOf(id), kr = k && R().kommun[k]; const d = r && kr ? dissim(r, kr) : null; return d == null ? null : { v: d, txt: t("oc_unlike_t", { v: fmt1(d) }) }; } },
+  swing: { g: "vote", f: (L, id) => { const r = rec(L, id); if (!r || !r.pp || !r.v) return null; let best = null;
+    for (const k of MAINP) { const d = share(r, k) - prevShare(r, k); if (!best || Math.abs(d) > Math.abs(best[1])) best = [k, d]; }
+    return { v: Math.abs(best[1]), txt: t("oc_swing_t", { k: best[0], v: sgn(best[1]), p: prevYear() }), party: best[0] }; } },
+  turnhi: { g: "vote", f: (L, id) => { const v = turnout(rec(L, id)); return v == null ? null : { v, txt: t("oc_turn_t", { v: pct(v) }) }; } },
+  turnlo: { g: "vote", asc: true, f: (L, id) => { const v = turnout(rec(L, id)); return v == null || v === 0 ? null : { v, txt: t("oc_turn_t", { v: pct(v) }) }; } },
+  blank: { g: "vote", f: (L, id) => { const r = rec(L, id); return r && r.t ? { v: 100 * r.b / r.t, txt: t("oc_blank_t", { v: pct(100 * r.b / r.t) }) } : null; } },
+  big: { g: "size", vd: true, f: (L, id) => { const o = ODD[state.year]?.[id]; return o ? { v: o.km2, txt: t("oc_area_t", { v: o.km2 >= 10 ? fmt0(o.km2) : fmt2(o.km2) }) } : null; } },
+  small: { g: "size", vd: true, asc: true, f: (L, id) => { const o = ODD[state.year]?.[id]; return o ? { v: o.km2, txt: t("oc_area_t", { v: fmt2(o.km2) }) } : null; } },
+  most: { g: "size", f: (L, id) => { const r = rec(L, id); return r && r.e ? { v: r.e, txt: t("oc_elig_t", { v: fmtInt(r.e) }) } : null; } },
+  fewest: { g: "size", asc: true, f: (L, id) => { const r = rec(L, id); return r && r.e ? { v: r.e, txt: t("oc_elig_t", { v: fmtInt(r.e) }) } : null; } },
+};
+let ODD_ROWS = [], ODD_SET = new Map();
+function computeOdd() {
+  const c = ODD_CATS[state.odd], L = state.level;
+  const rows = [];
+  for (const id of levelIds(L)) { const x = c.f(L, id); if (x) rows.push({ id, ...x }); }
+  rows.sort((a, b) => c.asc ? a.v - b.v : b.v - a.v);
+  ODD_ROWS = rows;
+  ODD_SET = new Map(rows.slice(0, Math.min(rows.length, state.oddLimit)).map((r, i) => [r.id, r]));
+}
+async function ensureOdd() {
+  const c = ODD_CATS[state.odd];
+  if (c.vd && state.level !== "vd") { state.level = "vd"; applyLevel(); }
+  if (state.level === "vd") await loadOdd(state.year);
+}
+function renderOdd() {
+  const el = $("#oddpane"), c = ODD_CATS[state.odd];
+  const groups = ["shape", "vote", "size"].map((g) => `<optgroup label="${esc(t("odd_g_" + g))}">${Object.entries(ODD_CATS).filter(([, v]) => v.g === g).map(([k]) => `<option value="${k}" ${k === state.odd ? "selected" : ""}>${esc(t("oc_" + k))}</option>`).join("")}</optgroup>`).join("");
+  const selId = state.sel && state.sel.lvl === state.level ? state.sel.id : null;
+  const selRank = selId ? ODD_ROWS.findIndex((r) => r.id === selId) : -1;
+  const shown = ODD_ROWS.slice(0, Math.max(state.oddLimit, selRank + 10));
+  const items = shown.map((r, i) => {
+    const dot = r.party ? `<i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${META.parties[PI[r.party]].c};margin-right:5px"></i>` : "";
+    return `<li data-id="${esc(r.id)}"${r.id === selId ? ' class="sel"' : ""}><span class="no">${i + 1}</span><span class="nm"><b>${esc(areaName(state.level, r.id))}</b><small>${esc(parentName(state.level, r.id))}</small></span><span></span><div class="why"><span>${dot}${esc(r.txt)}</span></div></li>`;
+  }).join("");
+  el.innerHTML = `<div class="simhead"><h2>${esc(t("odd_title"))}</h2>
+    <div><label class="ctl-label" for="oddcat">${esc(t("odd_pick"))}</label><select id="oddcat">${groups}</select></div>
+    <p class="note">${esc(t("oc_" + state.odd + "_d"))}${c.vd ? " " + esc(t("odd_only_vd")) : ""}</p></div>
+    ${shown.length ? `<ol class="rank odd">${items}</ol>` : `<p class="simempty">${esc(t("odd_none"))}</p>`}
+    ${ODD_ROWS.length > shown.length ? `<div class="more"><button type="button" class="btn" id="oddmore">${esc(t("show_more"))}</button></div>` : ""}`;
+  $("#oddcat").addEventListener("change", async (e) => { state.odd = e.target.value; state.oddLimit = 50; await ensureOdd(); refreshAll(); });
+  const mo = $("#oddmore"); if (mo) mo.addEventListener("click", () => { state.oddLimit += 100; refreshView(); });
+  el.querySelector("ol.rank")?.addEventListener("click", (e) => { const li = e.target.closest("li[data-id]"); if (li) select(state.level, li.dataset.id, true, "odd"); });
+}
+function markOddSel(scroll = false) {
+  const id = state.sel && state.sel.lvl === state.level ? state.sel.id : null;
+  let item = null;
+  document.querySelectorAll("#oddpane ol.rank li").forEach((li) => { const on = li.dataset.id === id; li.classList.toggle("sel", on); if (on) item = li; });
+  if (id && !item && ODD_ROWS.some((r) => r.id === id)) { renderOdd(); item = document.querySelector("#oddpane ol.rank li.sel"); }
+  if (scroll && item) scrollIntoPane(item, $("#oddpane"), 20);
+}
+
+// ======================================================================
 // Controls
 // ======================================================================
 function modeOptions() {
@@ -1269,15 +1423,16 @@ function setMode(m) {
   if (["share", "change"].includes(m)) state.scY = state.party;
   refreshAll();
 }
-function setLevel(lvl) { if (hoverId != null) clearHover(); state.level = lvl; applyLevel(); state.llimit = 300; state.simLimit = 50; refreshAll(); }
+function setLevel(lvl) { if (hoverId != null) clearHover(); state.level = lvl; applyLevel();
+  if (state.view === "odd" && ODD_CATS[state.odd].vd && lvl !== "vd") state.odd = "maxparty"; state.llimit = 300; state.simLimit = 50; refreshAll(); }
 function setView(v) {
   state.view = v;
   document.querySelectorAll("#tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.view === v));
   const views = $("#views");
-  views.classList.toggle("sim", v === "sim"); views.classList.toggle("list", v === "list");
-  $("#simpane").hidden = v !== "sim"; $("#listpane").hidden = v !== "list"; $("#mapwrap").hidden = v === "list";
-  $("#mode-ctl").hidden = v === "sim";
-  $("#party-ctl").hidden = v === "sim" || !["share", "change"].includes(state.mode);
+  views.classList.toggle("sim", v === "sim" || v === "odd"); views.classList.toggle("list", v === "list");
+  $("#simpane").hidden = v !== "sim"; $("#oddpane").hidden = v !== "odd"; $("#listpane").hidden = v !== "list"; $("#mapwrap").hidden = v === "list";
+  $("#mode-ctl").hidden = v === "sim" || v === "odd";
+  $("#party-ctl").hidden = v === "sim" || v === "odd" || !["share", "change"].includes(state.mode);
   if (mapReady && v !== "list") requestAnimationFrame(() => {
     map.resize();
     if (pendingZoom && state.sel && byId[state.sel.lvl][state.sel.id]) zoomTo(state.sel.lvl, state.sel.id);
@@ -1286,12 +1441,15 @@ function setView(v) {
   refreshAll();
   if (v === "list") markListSel(true);
   if (v === "sim") markSimSel(true);
+  if (v === "odd") markOddSel(true);
 }
 function refreshView() {
   writeHash();
+  if (state.view === "odd") computeOdd();
   recolor();
   if (state.view === "list") renderList();
   if (state.view === "sim") renderSim();
+  if (state.view === "odd") renderOdd();
 }
 function refreshAll() {
   modeOptions();
@@ -1319,12 +1477,13 @@ function initControls() {
   $("#mode").addEventListener("change", (e) => setMode(e.target.value));
   $("#year").addEventListener("click", (e) => { const b = e.target.closest("[data-y]"); if (b && +b.dataset.y !== state.year) setYear(+b.dataset.y); });
   $("#level").addEventListener("click", (e) => { const b = e.target.closest("[data-level]"); if (b) setLevel(b.dataset.level); });
-  $("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (b) setView(b.dataset.view); });
+  $("#tabs").addEventListener("click", async (e) => { const b = e.target.closest("[data-view]"); if (!b) return; if (b.dataset.view === "odd") await ensureOdd(); setView(b.dataset.view); });
   document.querySelectorAll(".lang button").forEach((b) => b.addEventListener("click", () => { lang = b.dataset.lang; LS("valkartan.lang", lang); applyLang(); refreshAll(); }));
   $("#zin").addEventListener("click", () => map.zoomIn());
   $("#zout").addEventListener("click", () => map.zoomOut());
   $("#zall").addEventListener("click", () => map.fitBounds(SWEDEN, { padding: 24 }));
   $("#osmbtn").addEventListener("click", () => setOsm(!state.osm));
+  $("#opacity").addEventListener("input", (e) => setOpacity(+e.target.value));
   $("#copylink").addEventListener("click", copyLink);
   addEventListener("hashchange", () => { if (location.hash.replace("#", "") !== lastHash) applyHashLive(); });
   // list
@@ -1353,9 +1512,10 @@ async function applyHashLive() {
   const y = state.year; state.year = oldYear;
   if (y !== oldYear) await setYear(y);
   if (lang !== oldLang) applyLang();
+  if (state.view === "odd") await ensureOdd();
   document.querySelectorAll("#parties .chip").forEach((c) => c.setAttribute("aria-pressed", c.dataset.p === state.party));
   if (state.sel && !byId[state.sel.lvl][state.sel.id]) state.sel = null;
-  setOsm(state.osm); applyLevel(); setView(state.view); applySelection();
+  setOsm(state.osm); setOpacity(state.op, false); applyLevel(); setView(state.view); applySelection();
   if (state.sel) zoomTo(state.sel.lvl, state.sel.id);
 }
 function retheme() {
@@ -1416,14 +1576,14 @@ async function boot() {
     await loadYear(2026);
     if (state.year !== 2026) await loadYear(state.year);
     if (state.simAvg) await loadAllYears();
-    byId.vd = Object.fromEntries(VDGEO[state.year].features.map((f) => [f.properties.id, f]));
-    const fc = { vd: VDGEO[state.year], kommun: topoToFC(geo, "kommun", "k"), lan: topoToFC(geo, "lan", "l") };
-    byId.kommun = Object.fromEntries(fc.kommun.features.map((f) => [f.properties.id, f]));
-    byId.lan = Object.fromEntries(fc.lan.features.map((f) => [f.properties.id, f]));
+    if (state.view === "odd") await ensureOdd();
+    useGeo(state.year);
+    const fc = GEOY[state.year];
     if (state.sel && !byId[state.sel.lvl][state.sel.id]) state.sel = null;
     initControls(); applyLang(); applyLevel();
     $("#party-ctl").hidden = !["share", "change"].includes(state.mode);
     $("#osmbtn").setAttribute("aria-pressed", state.osm); $("#osmattr").hidden = !state.osm;
+    setOpacity(state.op, false);
     setView(state.view);
     initMap(fc);
   } catch (err) { $("#loadmsg").textContent = err.message; console.error(err); }
