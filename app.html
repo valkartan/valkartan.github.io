@@ -794,13 +794,13 @@ function vkStats(year) {
   const acc = {};
   for (const [k, s] of Object.entries(ST.kommun)) {
     const vk = mp[k]; if (!vk || !s || !s.pop) continue;
-    const a = acc[vk] ||= { pop: 0, area: 0, w: {}, x: {} };
-    a.pop += s.pop; if (s.dens) a.area += s.pop / s.dens;
-    for (const st of META.stats) { const f = st.k; if (f === "pop" || f === "dens" || s[f] == null) continue; a.x[f] = (a.x[f] || 0) + s[f] * s.pop; a.w[f] = (a.w[f] || 0) + s.pop; }
+    const a = acc[vk] ||= { pop: 0, area: 0, areat: 0, w: {}, x: {} };
+    a.pop += s.pop; a.area += s.km2 || 0; a.areat += s.km2t || 0;
+    for (const st of META.stats) { const f = st.k; if (["pop", "dens", "km2", "km2t"].includes(f) || s[f] == null) continue; a.x[f] = (a.x[f] || 0) + s[f] * s.pop; a.w[f] = (a.w[f] || 0) + s.pop; }
   }
   const out = {};
   for (const [vk, a] of Object.entries(acc)) {
-    const o = out[vk] = { pop: a.pop, dens: a.area ? Math.round(10 * a.pop / a.area) / 10 : null };
+    const o = out[vk] = { pop: a.pop, km2: Math.round(10 * a.area) / 10, km2t: Math.round(10 * a.areat) / 10, dens: a.area ? Math.round(10 * a.pop / a.area) / 10 : null };
     for (const f of Object.keys(a.x)) o[f] = Math.round(10 * a.x[f] / a.w[f]) / 10;
   }
   return (VK_ST[key] = out);
@@ -901,7 +901,7 @@ function metricLabel(mode = curMode()) {
     default: { const d = statDef(mode.slice(5)); return statName(d) + (statUnit(d) ? ` (${statUnit(d)})` : ""); }
   }
 }
-function fmtStat(k, v) { const d = statDef(k); if (v == null) return "–"; const s = d.fmt === "int" ? fmtInt(v) : d.fmt === "0" ? fmt0(v) : fmt1(v); return d.u_sv === "%" ? s + (lang === "sv" ? " %" : "%") : s; }
+function fmtStat(k, v) { const d = statDef(k); if (v == null) return "–"; const s = d.fmt === "int" ? fmtInt(v) : d.fmt === "area" ? (v >= 100 ? fmtInt(v) : fmt1(v)) : d.fmt === "0" ? fmt0(v) : fmt1(v); return d.u_sv === "%" ? s + (lang === "sv" ? " %" : "%") : s; }
 function fmtMetric(v, mode = curMode()) {
   if (v == null) return t("no_data");
   switch (mode) {
