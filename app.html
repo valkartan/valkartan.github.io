@@ -220,6 +220,7 @@ ol.rank .why span { background: var(--chip); border-radius: 4px; padding: 1px 6p
 ol.rank.odd li { grid-template-columns: 34px minmax(0, 1fr) 0; }
 .predrow { display: flex; gap: 10px; align-items: center; }
 .predrow input { flex: 1; accent-color: var(--ink); }
+.methodseg button { font-size: 12.5px; padding: 6px 2px; }
 .predbody { padding: 14px 18px 24px; display: grid; gap: 16px; }
 table.predtable th { text-align: right; font: 600 11px var(--font-body); color: var(--ink-3); padding: 4px 0 6px 8px; border-bottom: 1px solid var(--line-strong); }
 table.predtable th:first-child { text-align: left; padding-left: 0; }
@@ -227,7 +228,26 @@ table.predtable td:first-child { font-weight: 600; }
 table.predtable i.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
 table.predtable td.r.bad { color: var(--ink); font-weight: 600; }
 .seatbar { position: relative; display: flex; height: 16px; border-radius: 3px; overflow: hidden; gap: 1px; }
-.seatbar .mid { position: absolute; left: calc(175 / 349 * 100%); top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+.seatbar .mid { position: absolute; left: calc(175 / 349 * 100% - 1px); top: 0; bottom: 0; width: 2px; background: var(--ink); z-index: 1; box-shadow: 0 0 0 1px var(--panel); }
+.seatrow { display: grid; grid-template-columns: 54px 1fr; gap: 2px 8px; align-items: center; margin-top: 6px; }
+.seatrow .sl { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; }
+.seatrow .seatbar > div { display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.seatrow .seatbar > div span { font: 600 10px var(--font-mono); color: #fff; text-shadow: 0 0 2px rgba(0,0,0,.6); }
+.seatrow .seatbar > div.out { opacity: .45; }
+.seatrow.thin .seatbar { height: 8px; }
+.seatsum { grid-column: 2; display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ink-2); }
+.seatsum .maj { color: var(--ink); font-weight: 600; }
+.seatsum .nn { color: var(--ink-3); }
+.grpdet { margin-top: 8px; font-size: 12.5px; }
+.grpdet summary { cursor: pointer; color: var(--ink-2); }
+.grpedit { display: grid; gap: 6px; margin-top: 6px; }
+.grpedit select { font: inherit; padding: 4px 6px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--panel); color: var(--ink); }
+.grpchips { display: flex; flex-wrap: wrap; gap: 4px; }
+.grpchip { display: inline-flex; align-items: center; gap: 5px; font: 500 12px var(--font-body); padding: 3px 8px; border-radius: 999px; cursor: pointer; background: var(--panel); color: var(--ink); border: 2px solid var(--line-strong); }
+.grpchip i { width: 8px; height: 8px; border-radius: 50%; }
+.grpchip[data-g="a"] { border-color: #c33b2e; background: color-mix(in srgb, #c33b2e 12%, var(--panel)); }
+.grpchip[data-g="b"] { border-color: #3d78c4; background: color-mix(in srgb, #3d78c4 12%, var(--panel)); }
+.grpchip[data-g="n"] { border-style: dashed; color: var(--ink-3); }
 .seatlist { display: flex; flex-wrap: wrap; gap: 4px 12px; font: 12px var(--font-mono); margin-top: 6px; }
 .seatlist small { color: var(--ink-3); }
 #predchart { width: 100%; display: block; }
@@ -411,21 +431,27 @@ const T = {
     view_map: "Karta", view_list: "Lista", view_sim: "Mest lik Sverige", view_odd: "Udda distrikt", view_pred: "Valvaka",
     pr_title: "Valvaka: prognos från de första distrikten", pr_reported: "Rapporterade valdistrikt", pr_play: "Spela upp", pr_pause: "Pausa",
     pr_order: "Ordning", pr_order_random: "Slumpvis", pr_order_small: "Minsta först", pr_order_large: "Största först", pr_reshuffle: "Ny slumpordning",
-    pr_method: "Metod", pr_m_uniform: "Enhetlig svängning", pr_m_local: "Lokal svängning",
+    pr_method: "Metod", pr_m_uniform: "Enhetlig", pr_m_local: "Lokal", pr_m_similar: "Liknande", pr_m_combined: "Kombinerad",
+    pr_order_manual: "Egen – klicka på kartan", pr_manual_help: "Klicka på valdistrikt på kartan för att markera dem som räknade. Skift-klick tar hela kommunen.", pr_clear: "Rensa",
+    pr_unc_note: "± = ungefärligt 95-procentsintervall: hur mycket prognosen varierar när de rapporterade distrikten dras om, plus hur fel samma metod och ordning blev i valet {y}. ! = facit utanför intervallet.",
+    pr_unc_note_nobt: "± = ungefärligt 95-procentsintervall från omdragning av de rapporterade distrikten (inget tidigare val att testa mot). ! = facit utanför intervallet.",
     pr_party: "Parti", pr_pred: "Prognos", pr_unc: "±", pr_actual: "Facit", pr_err: "Fel",
-    pr_seats: "Mandat (förenklat)", pr_seats_actual: "facit i distrikten", pr_majority: "Egen majoritet: 175 av 349",
-    pr_counted: "{n} av {N} distrikt · {v} röster räknade ({p} av alla röster i distrikten)",
+    pr_seats: "Mandat (förenklat)", pr_seats_actual: "facit", pr_majority: "Egen majoritet: 175 av 349",
+    pr_counted: "{n} av {N} distrikt · {v} röster räknade ({p} av alla röster)",
     pr_none: "Inga distrikt räknade ännu – prognosen är förra valets resultat.",
     pr_noprev: "Det finns inget tidigare val att jämföra med för {y}. Välj ett senare år.",
-    pr_mae: "Medelfel {e} p.e. · största fel {m} p.e. ({k})",
+    pr_mae: "Medelfel {e} p.e. · största fel {m} p.e. ({k}).",
     pr_chart: "Prognosen medan rösterna räknas", pr_chart_x: "andel rapporterade distrikt",
     pr_legend: "Rapporterade distrikt i färg efter största parti, övriga grå",
     pr_method_title: "Så räknas prognosen",
     pr_method_text: [
       "Utgångspunkten är förra valet. För varje distrikt som har rapporterat räknas svängningen: partiets andel nu minus dess andel i samma distrikt förra valet (eller i kommunen, där distriktet ritats om).",
-      "<b>Enhetlig svängning</b> lägger den genomsnittliga svängningen i de rapporterade distrikten (viktad med antal röster) på alla distrikt som inte rapporterat. <b>Lokal svängning</b> använder i första hand svängningen i samma kommun, i andra hand länet och sist riket. Ju färre rapporterade distrikt i kommunen, desto mer dras den mot läns- och rikssiffran.",
-      "Antalet röster i ej rapporterade distrikt skattas som röstberättigade (känt före valet) gånger förra valets valdeltagande plus förändringen hittills. ± är ett ungefärligt 95-procentsintervall utifrån hur mycket svängningen varierar mellan distrikten; det förutsätter att de rapporterade distrikten är ett slumpmässigt urval, vilket de inte är med \"minsta först\".",
-      "Facit är det slutliga resultatet i valdistrikten (utan de röster som räknas centralt i efterhand). Mandaten räknas förenklat på hela riket med jämkade uddatalsmetoden (första divisor 1,2) och 4-procentsspärren; för 2026 ger det exakt samma fördelning som den officiella."
+      "<b>Enhetlig</b> lägger den genomsnittliga svängningen i de rapporterade distrikten (viktad med antal röster) på alla distrikt som inte rapporterat. <b>Lokal</b> använder i första hand svängningen i samma kommun, i andra hand länet och sist riket; ju färre rapporterade distrikt i kommunen, desto mer dras den mot läns- och rikssiffran.",
+      "<b>Liknande</b> (distrikt) låter ett rapporterat distrikt säga något om distrikt som liknar det, var de än ligger. Varje distrikt har en lista över de 40 mest lika distrikten i hela landet, utifrån sådant som är känt före valnatten: förra valets resultat och valdeltagande i distriktet samt inkomst, utbildning, sysselsättning, utrikes födda, ålder och befolkningstäthet (för 2026 distriktets egna siffror, för tidigare år kommunens). Svängningen hos de upp till 15 mest lika som har rapporterat används, men dras mot den lokala svängningen när få av dem rapporterat. <b>Kombinerad</b> är medelvärdet av Lokal och Liknande och brukar vara säkrast.",
+      "Antalet röster i ej rapporterade distrikt skattas som röstberättigade (känt före valet) gånger förra valets valdeltagande plus förändringen hittills. Därtill kommer de röster som räknas centralt först efter valnatten (sent inkomna förtidsröster, röster från utlandet m.m., 5 % av rösterna 2026): de antas utgöra lika stor del som förra valet och fördela sig som då, plus den nationella svängningen.",
+      "± är ett ungefärligt 95-procentsintervall med två delar. Den första: de rapporterade distrikten dras om slumpmässigt (bootstrap) och prognosen räknas om, vilket visar hur mycket den beror på just de distrikten. Den andra tar hänsyn till att rapporteringsordningen inte är slumpmässig: samma metod, ordning och andel rapporterade körs på förra valet, och felet där läggs till. Med \"minsta först\" blir intervallet därför bredare tidigt under kvällen.",
+      "<b>Egen</b> ordning: klicka på distrikt i kartan för att markera dem som rapporterade (skift-klick markerar hela kommunen). Bra för att se vad några få distrikt säger om helheten.",
+      "Facit är det officiella slutresultatet, inklusive de centralt räknade rösterna, och den officiella mandatfördelningen. Därför blir prognosen inte exakt rätt ens när alla distrikt rapporterat – precis som på en riktig valnatt. Prognosens mandat räknas förenklat på hela riket med jämkade uddatalsmetoden (första divisor 1,2, före 2018 1,4) och 4-procentsspärren. Från 2018 ger det samma fördelning som den officiella; 2010 och 2014 räckte utjämningsmandaten inte till, så där skiljer det några mandat."
     ],
     odd_title: "Udda distrikt", odd_pick: "Visa", odd_g_shape: "Form och gränser", odd_g_vote: "Valresultat", odd_g_size: "Storlek",
     odd_only_vd: "Gäller valdistrikt – visar valdistrikten.", odd_legend: "Markerade: de {n} första i listan", odd_none: "Inga områden uppfyller det här.",
@@ -450,7 +476,7 @@ const T = {
     search_ph: "Sök kommun eller valdistrikt", no_match: "Ingen träff",
     grp_result: "Valresultat", grp_sim: "Likhet med riket", grp_stats: "Statistik (SCB)",
     m_winner: "Största parti", m_share: "Partiets andel", m_change: "Partiets förändring sedan {p}",
-    m_bloc: "M+KD+L+SD mot S+V+MP+C", m_turnout: "Valdeltagande", m_turnoutchg: "Förändring i valdeltagande sedan {p}",
+    m_bloc: "{b} mot {a}", m_turnout: "Valdeltagande", m_turnoutchg: "Förändring i valdeltagande sedan {p}",
     m_simvote: "Röstlikhet med riket", m_simdemo: "Befolkningslikhet med riket",
     share_of: "{n} ({k}), andel av rösterna", change_of: "{n} ({k}), förändring sedan {p}",
     turnout: "Valdeltagande", eligible: "Röstberättigade", votes_cast: "Avgivna röster", blank: "blanka",
@@ -465,7 +491,9 @@ const T = {
     no_prev: "Ingen jämförelse med tidigare val.",
     largest_lead: "Blekare = mindre ledning (under 30 %, 30–40 %, 40–50 %, över 50 %).",
     decrease: "Minskning", increase: "Ökning",
-    bloc_left: "S+V+MP+C större", bloc_right: "M+KD+L+SD större", bloc_note: "Skillnad i procentenheter mellan gruppernas sammanlagda andelar.",
+    bloc_left: "{a} större", bloc_right: "{b} större", bloc_note: "Skillnad i procentenheter mellan gruppernas sammanlagda andelar. Grupperna kan ändras under röstfördelningen i panelen.",
+    grp_title: "Grupper", grp_change: "Ändra grupper", grp_help: "Klicka på ett parti för att flytta det: röd sida → blå sida → utanför.",
+    grp_p_tido: "Tidöpartierna mot S+V+MP+C", grp_p_alliance: "Alliansen mot de rödgröna, SD utanför", grp_p_jan: "Januariavtalet (S+MP+C+L+V) mot M+KD+SD", grp_p_custom: "Egna grupper",
     no_data: "Uppgift saknas", nd_changed: "Uppgift saknas: valdistriktet har ändrats sedan förra valet.",
     est_note: "Distriktens statistik är skattad från SCB:s DeSO-områden.",
     more_like: "Mer lik riket", less_like: "Mindre lik riket",
@@ -526,21 +554,27 @@ const T = {
     view_map: "Map", view_list: "List", view_sim: "Most like Sweden", view_odd: "Odd districts", view_pred: "Election night",
     pr_title: "Election night: forecast from the first districts", pr_reported: "Districts reported", pr_play: "Play", pr_pause: "Pause",
     pr_order: "Order", pr_order_random: "Random", pr_order_small: "Smallest first", pr_order_large: "Largest first", pr_reshuffle: "New random order",
-    pr_method: "Method", pr_m_uniform: "Uniform swing", pr_m_local: "Local swing",
+    pr_method: "Method", pr_m_uniform: "Uniform", pr_m_local: "Local", pr_m_similar: "Similar", pr_m_combined: "Combined",
+    pr_order_manual: "Your own – click the map", pr_manual_help: "Click voting districts on the map to mark them as counted. Shift-click takes the whole municipality.", pr_clear: "Clear",
+    pr_unc_note: "± = rough 95% interval: how much the forecast moves when the reported districts are resampled, plus how wrong the same method and order were in the {y} election. ! = actual outside the interval.",
+    pr_unc_note_nobt: "± = rough 95% interval from resampling the reported districts (no earlier election to test against). ! = actual outside the interval.",
     pr_party: "Party", pr_pred: "Forecast", pr_unc: "±", pr_actual: "Actual", pr_err: "Error",
-    pr_seats: "Seats (simplified)", pr_seats_actual: "actual in districts", pr_majority: "Majority: 175 of 349",
-    pr_counted: "{n} of {N} districts · {v} votes counted ({p} of all district votes)",
+    pr_seats: "Seats (simplified)", pr_seats_actual: "actual", pr_majority: "Majority: 175 of 349",
+    pr_counted: "{n} of {N} districts · {v} votes counted ({p} of all votes)",
     pr_none: "No districts counted yet – the forecast is the previous election result.",
     pr_noprev: "There is no earlier election to compare with for {y}. Choose a later year.",
-    pr_mae: "Mean error {e} pp · largest error {m} pp ({k})",
+    pr_mae: "Mean error {e} pp · largest error {m} pp ({k}).",
     pr_chart: "The forecast as the votes are counted", pr_chart_x: "share of districts reported",
     pr_legend: "Reported districts coloured by largest party, others grey",
     pr_method_title: "How the forecast works",
     pr_method_text: [
       "The starting point is the previous election. For every district that has reported, the swing is computed: the party's share now minus its share in the same district last time (or in the municipality, where the district has been redrawn).",
-      "<b>Uniform swing</b> applies the average swing of the reported districts (weighted by votes) to every district that has not reported. <b>Local swing</b> uses the swing in the same municipality first, then the county, then the whole country; the fewer districts have reported in a municipality, the more it leans on the county and national figures.",
-      "Votes in districts that have not reported are estimated as eligible voters (known before the election) times last election's turnout plus the change so far. ± is a rough 95% interval based on how much the swing varies between districts; it assumes the reported districts are a random sample, which they are not with \"smallest first\".",
-      "Actual is the final result in the voting districts (without the votes counted centrally afterwards). Seats use a simplified national count with the modified Sainte-Laguë method (first divisor 1.2) and the 4% threshold; for 2026 that gives exactly the official distribution."
+      "<b>Uniform</b> applies the average swing of the reported districts (weighted by votes) to every district that has not reported. <b>Local</b> uses the swing in the same municipality first, then the county, then the whole country; the fewer districts have reported in a municipality, the more it leans on the county and national figures.",
+      "<b>Similar</b> (districts) lets a reported district say something about districts that resemble it, wherever they are. Each district has a list of its 40 most similar districts in the whole country, based only on what is known before election night: the previous result and turnout in the district, plus income, education, employment, foreign-born share, age and population density (the district's own figures for 2026, the municipality's for earlier years). The swing of up to 15 of the most similar that have reported is used, pulled towards the local swing when only a few have reported. <b>Combined</b> is the average of Local and Similar and is usually the safest.",
+      "Votes in districts that have not reported are estimated as eligible voters (known before the election) times last election's turnout plus the change so far. On top of that come the votes counted centrally only after election night (late advance votes, votes from abroad etc., 5% of the votes in 2026): they are assumed to make up the same share as last time and split as they did then, plus the national swing.",
+      "± is a rough 95% interval with two parts. First, the reported districts are resampled at random (bootstrap) and the forecast recomputed, showing how much it depends on those particular districts. Second, it allows for the reporting order not being random: the same method, order and share reported are run on the previous election, and the error there is added. With \"smallest first\" the interval is therefore wider early in the night.",
+      "<b>Own</b> order: click districts on the map to mark them as reported (shift-click marks the whole municipality). Useful for seeing what a handful of districts say about the whole.",
+      "Actual is the official final result, including the centrally counted votes, and the official seat distribution. So the forecast is not exactly right even when every district has reported – just like on a real election night. Forecast seats use a simplified national count with the modified Sainte-Laguë method (first divisor 1.2, 1.4 before 2018) and the 4% threshold. From 2018 that gives the official distribution; in 2010 and 2014 the adjustment seats were not enough, so it is a few seats off there."
     ],
     odd_title: "Odd districts", odd_pick: "Show", odd_g_shape: "Shape and borders", odd_g_vote: "Results", odd_g_size: "Size",
     odd_only_vd: "Applies to voting districts – showing districts.", odd_legend: "Highlighted: the first {n} in the list", odd_none: "No areas match this.",
@@ -565,7 +599,7 @@ const T = {
     search_ph: "Find a municipality or district", no_match: "No match",
     grp_result: "Election result", grp_sim: "Similarity to Sweden", grp_stats: "Statistics (SCB)",
     m_winner: "Largest party", m_share: "Party share", m_change: "Party change since {p}",
-    m_bloc: "M+KD+L+SD vs S+V+MP+C", m_turnout: "Turnout", m_turnoutchg: "Turnout change since {p}",
+    m_bloc: "{b} vs {a}", m_turnout: "Turnout", m_turnoutchg: "Turnout change since {p}",
     m_simvote: "Voting similarity to Sweden", m_simdemo: "Population similarity to Sweden",
     share_of: "{n} ({k}), share of votes", change_of: "{n} ({k}), change since {p}",
     turnout: "Turnout", eligible: "Eligible voters", votes_cast: "Votes cast", blank: "blank",
@@ -580,7 +614,9 @@ const T = {
     no_prev: "No earlier election to compare with.",
     largest_lead: "Paler = smaller lead (under 30%, 30–40%, 40–50%, over 50%).",
     decrease: "Decrease", increase: "Increase",
-    bloc_left: "S+V+MP+C ahead", bloc_right: "M+KD+L+SD ahead", bloc_note: "Percentage points between the two groups' combined shares.",
+    bloc_left: "{a} ahead", bloc_right: "{b} ahead", bloc_note: "Percentage points between the two groups' combined shares. The groups can be changed under the vote shares in the panel.",
+    grp_title: "Groups", grp_change: "Change groups", grp_help: "Click a party to move it: red side → blue side → neither.",
+    grp_p_tido: "Tidö parties vs S+V+MP+C", grp_p_alliance: "Alliance vs red-greens, SD outside", grp_p_jan: "January agreement (S+MP+C+L+V) vs M+KD+SD", grp_p_custom: "Custom groups",
     no_data: "No data", nd_changed: "No data: district boundaries changed since the previous election.",
     est_note: "District statistics are estimates from SCB DeSO areas.",
     more_like: "More like Sweden", less_like: "Less like Sweden",
@@ -640,9 +676,27 @@ const loc = () => lang === "sv" ? "sv-SE" : "en-US";
 // ======================================================================
 // State and helpers
 // ======================================================================
-const GOV = ["M", "KD", "L", "SD"], OPP = ["S", "V", "MP", "C"];
+// Party groupings ("block"): one letter per main party in META order (S M SD V C KD MP L):
+// a = left-hand group (drawn red, from the left), b = right-hand group (blue, from the right), n = neither.
+const GROUP_PRESETS = { tido: "abbaabab", alliance: "abnabbab", jan: "abbaabaa" };
+const GROUP_DEFAULT = GROUP_PRESETS.tido;
+let GOV = [], OPP = [];
+function setGroups(g) {
+  state.groups = /^[abn]{8}$/.test(g) ? g : GROUP_DEFAULT;
+  const ks = META.parties.slice(0, 8).map((p) => p.k);
+  OPP = ks.filter((k, i) => state.groups[i] === "a"); GOV = ks.filter((k, i) => state.groups[i] === "b");
+}
+const grpName = (ks) => ks.length ? ks.join("+") : "–";
+function groupPreset() { return Object.keys(GROUP_PRESETS).find((k) => GROUP_PRESETS[k] === state.groups) || "custom"; }
+function groupEditorHtml() {
+  const ps = META.parties.slice(0, 8);
+  return `<div class="grpedit"><select class="grp-preset" aria-label="${esc(t("grp_title"))}">${[...Object.keys(GROUP_PRESETS), "custom"].map((k) => `<option value="${k}" ${groupPreset() === k ? "selected" : ""} ${k === "custom" ? "disabled" : ""}>${esc(t("grp_p_" + k))}</option>`).join("")}</select>
+    <div class="grpchips">${ps.map((p, i) => `<button type="button" class="grpchip" data-grp="${i}" data-g="${state.groups[i]}" title="${esc(p.n)}"><i style="background:${p.c}"></i>${p.k}</button>`).join("")}</div>
+    <p class="note">${esc(t("grp_help"))}</p></div>`;
+}
+function onGroupsChanged(g) { setGroups(g); modeOptions(); renderDetail(); refreshView(); }
 const state = { year: 2026, view: "map", level: "kommun", mode: "winner", party: "S", sel: null, scX: "inc", scY: "S",
-  simKind: "vote", simAvg: false, simLeast: false, simLimit: 50, cols: "res", sort: { key: "name", dir: 1 }, lfilter: "", llimit: 300, osm: false, op: 100, odd: "exclave", oddLimit: 50, et: "RD", predPct: 25, predOrder: "random", predMethod: "local", predSeed: 1 };
+  simKind: "vote", simAvg: false, simLeast: false, simLimit: 50, cols: "res", sort: { key: "name", dir: 1 }, lfilter: "", llimit: 300, osm: false, op: 100, odd: "exclave", oddLimit: 50, et: "RD", predPct: 25, predOrder: "random", predMethod: "combined", predSeed: 1, predManual: new Set(), groups: "abbaabab" };
 // election types: RD = Riksdag (yellow ballot), RF = region (blue), KF = municipality (white)
 const ET = ["RD", "RF", "KF"];
 const rkey = (y, et = state.et) => et === "RD" ? String(y) : `${y}_${et}`;
@@ -762,7 +816,7 @@ function metricLabel(mode = curMode()) {
     case "change": return t("change_of", { n: p.n, k: p.k, p: py ?? "–" });
     case "turnout": return t("m_turnout");
     case "turnoutchg": return t("m_turnoutchg", { p: py ?? "–" });
-    case "bloc": return t("m_bloc");
+    case "bloc": return t("m_bloc", { a: grpName(OPP), b: grpName(GOV) });
     case "simvote": return t("sim_vote_lbl") + (lang === "sv" ? " (procent av rösterna)" : " (% of votes)");
     case "simdemo": return t("sim_demo_lbl") + (lang === "sv" ? " (standardavvikelser)" : " (standard deviations)");
     case "odd": return t("oc_" + state.odd);
@@ -811,7 +865,7 @@ function buildScale() {
     m = Math.max(niceRound(m, m) || m, 0.5);
     const edges = [-m, -m * 2 / 3, -m / 3, -m / 9, m / 9, m / 3, m * 2 / 3, m];
     let neg = DIV_NEG, pos = DIV_POS, ends = [t("decrease"), t("increase")];
-    if (mode === "bloc") { neg = ["#7a1010", "#c33b2e", "#ec9a86"]; pos = ["#a9c7ea", "#3d78c4", "#123f7a"]; ends = [t("bloc_left"), t("bloc_right")]; }
+    if (mode === "bloc") { neg = ["#7a1010", "#c33b2e", "#ec9a86"]; pos = ["#a9c7ea", "#3d78c4", "#123f7a"]; ends = [t("bloc_left", { a: grpName(OPP) }), t("bloc_right", { b: grpName(GOV) })]; }
     const mid = isDark() ? "#55595e" : "#d9d8d2";
     const colors = [neg[0], neg[1], neg[2], mid, pos[0], pos[1], pos[2]];
     if (mode === "change") { const s = seqFor(META.parties[PI[state.party]].c); colors.splice(4, 3, s[2], s[4], s[6]); }
@@ -870,7 +924,9 @@ function initMap(fc) {
       map.addLayer({ id: `${lvl}-sel-halo`, type: "line", source: lvl, filter: ["==", ["get", "id"], ""], paint: { "line-color": css("--panel"), "line-width": 1, "line-offset": -2 } });
       map.on("mousemove", `${lvl}-fill`, (e) => onHover(e, lvl));
       map.on("mouseleave", `${lvl}-fill`, () => clearHover());
-      map.on("click", `${lvl}-fill`, (e) => { const f = e.features[0]; if (f) select(lvl, f.properties.id, false, "map"); });
+      map.on("click", `${lvl}-fill`, (e) => { const f = e.features[0]; if (!f) return;
+        if (state.view === "pred" && state.predOrder === "manual" && lvl === "vd") { toggleReported(f.properties.id, e.originalEvent.shiftKey); return; }
+        select(lvl, f.properties.id, false, "map"); });
     }
     mapReady = true;
     if (state.osm) addOsm();
@@ -921,6 +977,7 @@ function encodeHash() {
   if (state.view === "sim") { tk.push("k-" + state.simKind); if (state.simAvg) tk.push("avg"); if (state.simLeast) tk.push("least"); }
   if (state.scX !== "inc") tk.push("sx-" + state.scX);
   if (state.scY !== state.party) tk.push("sy-" + state.scY.replace("_", ""));
+  if (state.groups !== GROUP_DEFAULT) tk.push("g-" + state.groups);
   if (state.osm) tk.push("osm");
   if (state.op !== 100) tk.push("o-" + state.op);
   if (lang === "en") tk.push("en");
@@ -932,8 +989,9 @@ function parseHash(h) {
     if (["map", "list", "sim", "odd", "pred"].includes(tk)) o.view = tk;
     else if (/^r-\d{1,3}$/.test(tk)) o.predPct = +tk.slice(2);
     else if (tk.startsWith("pm-")) o.predMethod = tk.slice(3);
-    else if (tk.startsWith("po-")) { const m = tk.slice(3).match(/^(random|small|large)(\d*)$/); if (m) { o.predOrder = m[1]; if (m[2]) o.predSeed = +m[2]; } }
+    else if (tk.startsWith("po-")) { const m = tk.slice(3).match(/^(random|small|large|manual)(\d*)$/); if (m) { o.predOrder = m[1]; if (m[2]) o.predSeed = +m[2]; } }
     else if (tk.startsWith("q-")) o.odd = tk.slice(2);
+    else if (/^g-[abn]{8}$/.test(tk)) o.groups = tk.slice(2);
     else if (tk.startsWith("e-")) o.et = tk.slice(2);
     else if (/^y\d{4}$/.test(tk)) o.year = +tk.slice(1);
     else if (["lan", "kommun", "vd"].includes(tk)) o.level = tk;
@@ -956,6 +1014,7 @@ function applyParsed(o) {
   const P = META.parties.map((p) => p.k).filter((k) => k !== "ÖVR");
   const modes = ["winner", "share", "change", "bloc", "turnout", "turnoutchg", "simvote", "simdemo", ...META.stats.map((x) => "stat:" + x.k)];
   if (o.view) state.view = o.view;
+  setGroups(o.groups || GROUP_DEFAULT);
   if (ET.includes(o.et)) state.et = o.et;
   if (typeYears().includes(o.year)) state.year = o.year; else if (!typeYears().includes(state.year)) state.year = typeYears()[0];
   if (o.level) state.level = o.level;
@@ -966,7 +1025,7 @@ function applyParsed(o) {
   if (["vote", "demo"].includes(o.simKind)) state.simKind = o.simKind;
   if (o.odd && ODD_CATS[o.odd]) state.odd = o.odd;
   if (o.predPct != null && o.predPct <= 100) state.predPct = o.predPct;
-  if (["uniform", "local"].includes(o.predMethod)) state.predMethod = o.predMethod;
+  if (["uniform", "local", "similar", "combined"].includes(o.predMethod)) state.predMethod = o.predMethod;
   if (o.predOrder) state.predOrder = o.predOrder;
   if (o.predSeed) state.predSeed = o.predSeed;
   if (META.stats.some((x) => x.k === o.scX)) state.scX = o.scX; else if (state.mode.startsWith("stat:")) state.scX = state.mode.slice(5);
@@ -1118,6 +1177,7 @@ async function setYear(y) {
   state.year = y;
   useGeo(y);
   if (state.view === "odd" && state.level === "vd") await loadOdd(y);
+  if (state.view === "pred") { state.predManual.clear(); await loadPredData(); }
   if (state.sel && !byId[state.sel.lvl][state.sel.id]) state.sel = null;
   if (mapReady) { clearHover(); for (const l of LEVELS) map.getSource(l).setData(GEOY[y][l]); applySelection(); }
   soft.hidden = true; soft.classList.remove("soft");
@@ -1163,8 +1223,9 @@ function renderDetail() {
         <span class="v">${pct(s)}</span><span class="d">${ps != null ? sgn(s - ps) : ""}</span></div>`;
     }).join("");
     const gl = GOV.reduce((a, k) => a + share(r, k), 0), ol = OPP.reduce((a, k) => a + share(r, k), 0);
-    const bloc = `<div class="bloc"><div class="blocbar" aria-hidden="true"><div style="flex:${gl};background:#3d78c4"></div><div style="flex:${ol};background:#c33b2e"></div><div style="flex:${Math.max(0, 100 - gl - ol)};background:var(--line-strong)"></div></div>
-      <div style="display:flex;justify-content:space-between;gap:8px"><span>M+KD+L+SD <b class="num">${pct(gl)}</b></span><span>S+V+MP+C <b class="num">${pct(ol)}</b></span></div></div>`;
+    const bloc = `<div class="bloc"><div class="blocbar" aria-hidden="true"><div style="flex:${ol};background:#c33b2e"></div><div style="flex:${Math.max(0, 100 - gl - ol)};background:var(--line-strong)"></div><div style="flex:${gl};background:#3d78c4"></div></div>
+      <div style="display:flex;justify-content:space-between;gap:8px"><span>${grpName(OPP)} <b class="num">${pct(ol)}</b></span><span>${grpName(GOV)} <b class="num">${pct(gl)}</b></span></div>
+      <details class="grpdet"><summary>${esc(t("grp_change"))}</summary>${groupEditorHtml()}</details></div>`;
     const prevNote = r.pp ? t("bars_note", { y, p: py }) : !py ? t("no_prev") : lvl === "vd" ? t("no_prev_vd", { p: py }) : "";
     const others = (r.o || []).filter((o) => 100 * o[2] / r.v >= 0.5).slice(0, 6);
     const othersHtml = others.length ? `<div class="others"><div class="note">${esc(t("other_parties"))}</div>${others.map((o) =>
@@ -1530,13 +1591,23 @@ function markOddSel(scroll = false) {
 // Election night forecast
 // ======================================================================
 const NP = 9;  // S, M, SD, V, C, KD, MP, L, ÖVR
+const NN = {};      // similar districts per year (precomputed, see scripts/build_neighbours.py)
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-let PRED = null;   // prepared districts for the current year/type
-function predPrepare() {
-  const RR = R(); if (!RR || !RR.prev) return null;
+async function loadPredData() {
+  const ys = [state.year, state.year - 4].filter((y) => typeYears().includes(y));
+  await Promise.all(ys.map(async (y) => {
+    const k = rkey(y); if (!RES[k]) RES[k] = await getJSON(`data/results_${k}.json`);
+    if (NN[y] === undefined && y >= 2014) { try { NN[y] = await getJSON(`data/nn_${y}.json`); } catch (e) { NN[y] = null; } }
+  }));
+}
+const PREP = {};
+function predPrepare(year) {
+  const key = rkey(year) + "|" + state.et;
+  if (PREP[key]) return PREP[key];
+  const RR = RES[rkey(year)]; if (!RR || !RR.prev) return null;
   const kprev = {}, natPrev = RR.riket.pp ? RR.riket.pp.map((x) => x / RR.riket.vp) : null;
   for (const [k, r] of Object.entries(RR.kommun)) if (r.pp && r.vp) kprev[k] = { b: r.pp.map((x) => x / r.vp), t: r.tp / r.ep };
-  const ds = [];
+  const ds = [], idx = {};
   for (const [id, r] of Object.entries(RR.vd)) {
     if (!r.v) continue;
     const k = r.k, l = META.kommun[k]?.[1];
@@ -1545,118 +1616,201 @@ function predPrepare() {
     else if (kprev[k]) { b = kprev[k].b; bt = kprev[k].t; }
     else if (natPrev) { b = natPrev; bt = RR.riket.tp / RR.riket.ep; }
     else continue;
-    ds.push({ id, k, l, own, b, bt: bt || 0.8, a: r.pv.map((x) => x / r.v), pv: r.pv, v: r.v, t: r.t, e: r.e, tr: r.e ? r.t / r.e : null });
+    idx[id] = ds.length;
+    ds.push({ id, k, l, own, b, bt: bt || 0.8, a: r.pv.map((x) => x / r.v), pv: r.pv, v: r.v, t: r.t, e: r.e, tr: r.e ? r.t / r.e : null, nn: null });
   }
-  const actual = new Array(NP).fill(0); let av = 0;
-  for (const d of ds) { for (let i = 0; i < NP; i++) actual[i] += d.pv[i]; av += d.v; }
-  return { key: rkey(state.year) + state.et, ds, actual: actual.map((x) => x / av), actualVotes: actual, totalV: av, prevNat: natPrev };
+  const nnd = NN[year];
+  if (nnd) nnd.ids.forEach((id, i) => { const di = idx[id]; if (di != null) ds[di].nn = nnd.nn[i].map((j) => idx[nnd.ids[j]]).filter((x) => x != null); });
+  // Facit = the official national result, including the votes counted outside the districts afterwards.
+  // Those "central" votes are forecast from their share and size in the previous election (riket.cp).
+  const rk = RR.riket, cp = rk.cp && rk.cp.v > 0 && rk.vp ? rk.cp : null;
+  const central = cp ? { b: cp.pv.map((x) => Math.max(0, x) / cp.v), frac: cp.v / rk.vp } : null;
+  return (PREP[key] = { year, ds, idx, actual: rk.pv.map((x) => x / rk.v), totalV: rk.v, prevNat: natPrev, hasNN: !!nnd,
+    central, seats: rk.ms || null });
 }
-function predOrder(P) {
+function predOrderIdx(P, order, seed) {
   const ids = P.ds.map((d, i) => i);
-  if (state.predOrder === "small") ids.sort((a, b) => P.ds[a].e - P.ds[b].e);
-  else if (state.predOrder === "large") ids.sort((a, b) => P.ds[b].e - P.ds[a].e);
-  else { const r = rng(state.predSeed * 7919); for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; } }
+  if (order === "small") ids.sort((a, b) => P.ds[a].e - P.ds[b].e);
+  else if (order === "large") ids.sort((a, b) => P.ds[b].e - P.ds[a].e);
+  else { const r = rng(seed * 7919); for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; } }
   return ids;
 }
-function predict(P, order, n) {
-  const rep = new Uint8Array(P.ds.length); for (let i = 0; i < n; i++) rep[order[i]] = 1;
-  // swing statistics from reported districts (own previous result preferred)
+function repFromOrder(P, ord, n) { const rep = new Uint8Array(P.ds.length); for (let i = 0; i < n; i++) rep[ord[i]] = 1; return rep; }
+// rep: 1 for reported districts. wt (optional): bootstrap multiplicity of each reported district in the swing estimates.
+function predict(P, rep, method, wt) {
   const useOwn = P.ds.some((d, i) => rep[i] && d.own);
   const acc = () => ({ w: 0, n: 0, s: new Array(NP).fill(0), ss: new Array(NP).fill(0), ts: 0, tw: 0 });
   const nat = acc(), byK = {}, byL = {};
+  const sw = new Array(P.ds.length);     // swing of each reported district
   let vr = 0, tr = 0;
   P.ds.forEach((d, i) => {
     if (!rep[i]) return;
     vr += d.v; tr += d.t;
     if (useOwn && !d.own) return;
+    const m = wt ? wt[i] : 1; if (!m) return;
+    const s = d.a.map((x, p) => x - d.b[p]); sw[i] = s;
     for (const A of [nat, byK[d.k] ||= acc(), byL[d.l] ||= acc()]) {
-      A.w += d.v; A.n += 1;
-      for (let p = 0; p < NP; p++) { const sw = d.a[p] - d.b[p]; A.s[p] += d.v * sw; A.ss[p] += d.v * sw * sw; }
-      if (d.tr != null) { A.ts += d.e * (d.tr - d.bt); A.tw += d.e; }
+      A.w += m * d.v; A.n += m;
+      for (let p = 0; p < NP; p++) { A.s[p] += m * d.v * s[p]; A.ss[p] += m * d.v * s[p] * s[p]; }
+      if (d.tr != null) { A.ts += m * d.e * (d.tr - d.bt); A.tw += m * d.e; }
     }
   });
   const mean = (A) => A && A.w ? A.s.map((x) => x / A.w) : new Array(NP).fill(0);
   const tmean = (A) => A && A.tw ? A.ts / A.tw : 0;
-  const S0 = mean(nat), T0 = tmean(nat), LAM = 4;
-  const blend = (A, base, tbase) => { if (!A || !A.n) return [base, tbase]; const w = A.n / (A.n + LAM); const m = mean(A); return [m.map((x, p) => w * x + (1 - w) * base[p]), w * tmean(A) + (1 - w) * tbase]; };
+  const S0 = mean(nat), T0 = tmean(nat), LAM = 4, KNN = 15, LAMN = 3;
+  const blend = (A, base, tbase) => { if (!A || !A.n) return [base, tbase]; const w = A.n / (A.n + LAM); const mm = mean(A); return [mm.map((x, p) => w * x + (1 - w) * base[p]), w * tmean(A) + (1 - w) * tbase]; };
   const validRate = tr ? vr / tr : 0.99;
   const tot = new Array(NP).fill(0); let totV = 0, repV = 0;
   P.ds.forEach((d, i) => {
     if (rep[i]) { for (let p = 0; p < NP; p++) tot[p] += d.pv[p]; totV += d.v; repV += d.v; return; }
-    let sw = S0, ts = T0;
-    if (state.predMethod === "local") { const [sl, tl] = blend(byL[d.l], S0, T0); [sw, ts] = blend(byK[d.k], sl, tl); }
-    const sh = d.b.map((x, p) => Math.max(0, x + sw[p])); const sum = sh.reduce((a, b) => a + b, 0) || 1;
+    let s = S0, ts = T0;
+    if (method !== "uniform") { const [sl, tl] = blend(byL[d.l], S0, T0); [s, ts] = blend(byK[d.k], sl, tl); }
+    if ((method === "similar" || method === "combined") && d.nn) {
+      // swing among the most similar districts that have reported
+      const ks = new Array(NP).fill(0); let kw = 0, kn = 0;
+      for (const j of d.nn) {
+        if (!rep[j] || !sw[j]) continue;
+        const m = (wt ? wt[j] : 1) * P.ds[j].v; if (!m) continue;
+        for (let p = 0; p < NP; p++) ks[p] += m * sw[j][p];
+        kw += m; if (++kn >= KNN) break;
+      }
+      if (kw) {
+        const w = kn / (kn + LAMN), knn = ks.map((x) => x / kw);
+        const sim = knn.map((x, p) => w * x + (1 - w) * s[p]);
+        s = method === "similar" ? sim : sim.map((x, p) => (x + s[p]) / 2);
+      }
+    }
+    const sh = d.b.map((x, p) => Math.max(0, x + s[p])); const sum = sh.reduce((a, b) => a + b, 0) || 1;
     const votes = d.e * Math.min(0.99, Math.max(0.2, d.bt + ts)) * validRate;
     for (let p = 0; p < NP; p++) tot[p] += votes * sh[p] / sum;
     totV += votes;
   });
-  const share = tot.map((x) => x / totV);
-  // rough 95% interval: spread of district swings, shrinking as more of the electorate is counted
-  const f = repV / P.totalV, unc = nat.w ? nat.ss.map((x, p) => { const varp = Math.max(0, x / nat.w - S0[p] ** 2); return 1.96 * Math.sqrt(varp / Math.max(1, nat.n)) * Math.sqrt(Math.max(0, 1 - f)); }) : new Array(NP).fill(null);
-  return { share, unc, repV, n, f };
+  if (P.central) {   // votes counted centrally afterwards: previous election's share and size plus the national swing
+    const C = totV * P.central.frac / (1 - P.central.frac);
+    const sh = P.central.b.map((x, p) => Math.max(0, x + S0[p])), sum = sh.reduce((a, b) => a + b, 0) || 1;
+    for (let p = 0; p < NP; p++) tot[p] += C * sh[p] / sum;
+    totV += C;
+  }
+  return { share: tot.map((x) => x / totV), repV, f: repV / P.totalV, n: rep.reduce((a, b) => a + b, 0) };
 }
-function seatsFor(shares) {
-  const main = shares.slice(0, 8), tot = shares.reduce((a, b) => a + b, 0);
+function seatsFor(shares, year) {
+  const main = shares.slice(0, 8), tot = shares.reduce((a, b) => a + b, 0), first = year < 2018 ? 1.4 : 1.2;
   const el = main.map((x) => x / tot >= 0.04 ? x : 0), seats = new Array(8).fill(0);
-  for (let i = 0; i < 349; i++) { let best = -1, bq = -1; el.forEach((v, p) => { if (!v) return; const q = v / (seats[p] ? 2 * seats[p] + 1 : 1.2); if (q > bq) { bq = q; best = p; } }); seats[best]++; }
+  for (let i = 0; i < 349; i++) { let best = -1, bq = -1; el.forEach((v, p) => { if (!v) return; const q = v / (seats[p] ? 2 * seats[p] + 1 : first); if (q > bq) { bq = q; best = p; } }); seats[best]++; }
   return seats;
 }
-let predTimer = null, predCache = null;
-function predRun() {
-  if (!PRED || PRED.key !== rkey(state.year) + state.et) PRED = predPrepare();
-  if (!PRED) return null;
-  const order = predOrder(PRED), N = PRED.ds.length, n = Math.round(N * state.predPct / 100);
-  const cur = predict(PRED, order, n);
-  const ck = [PRED.key, state.predOrder, state.predSeed, state.predMethod].join("|");
-  if (!predCache || predCache.k !== ck) {
-    const steps = []; for (let q = 0; q <= 100; q += 2) steps.push({ q, r: q === 0 ? null : predict(PRED, order, Math.round(N * q / 100)) });
-    predCache = { k: ck, steps };
+// Uncertainty, two parts: (1) bootstrap - resample the reported districts and see how much the forecast moves;
+// (2) backtest - run the same method, order and share reported on the previous election and take its actual error.
+function predUncertainty(P, rep, method, cur) {
+  const B = 24, r = rng(4242 + state.predSeed), repIdx = []; rep.forEach((x, i) => x && repIdx.push(i));
+  const sims = [];
+  if (repIdx.length >= 5) for (let b = 0; b < B; b++) {
+    const wt = new Uint16Array(P.ds.length);
+    for (let i = 0; i < repIdx.length; i++) wt[repIdx[Math.floor(r() * repIdx.length)]]++;
+    sims.push(predict(P, rep, method, wt).share);
   }
-  const reported = new Set(order.slice(0, n).map((i) => PRED.ds[i].id));
-  return { cur, order, n, N, reported, steps: predCache.steps };
+  const boot = cur.share.map((m, p) => sims.length ? 1.96 * Math.sqrt(sims.reduce((a, s) => a + (s[p] - m) ** 2, 0) / sims.length) : null);
+  let bt = null, btYear = null;
+  const PB = predPrepare(state.year - 4);
+  if (PB && cur.n) {
+    const order = state.predOrder === "manual" ? "random" : state.predOrder;
+    const repB = repFromOrder(PB, predOrderIdx(PB, order, state.predSeed), Math.round(PB.ds.length * cur.n / P.ds.length));
+    const pb = predict(PB, repB, method);
+    bt = pb.share.map((x, p) => x - PB.actual[p]); btYear = state.year - 4;
+  }
+  // bt is a single error, treated as one standard deviation (x 1.96); a 0.2-point floor covers what neither part sees
+  // (e.g. the centrally counted votes). Calibrated on 2014-2026, all three election types: about 92 % of actual
+  // results fall inside (97 % with random order, about 80 % with smallest or largest first).
+  const total = cur.share.map((_, p) => boot[p] == null ? null : Math.sqrt(boot[p] ** 2 + (bt ? (1.96 * bt[p]) ** 2 : 0) + 0.002 ** 2));
+  return { boot, bt, btYear, total };
 }
-let PRED_REPORTED = new Set();
+let predTimer = null, predCache = null, PRED_REPORTED = new Set();
+function predState() {
+  const P = predPrepare(state.year); if (!P) return null;
+  const manual = state.predOrder === "manual";
+  let rep, ord = null;
+  if (manual) { rep = new Uint8Array(P.ds.length); for (const id of state.predManual) { const i = P.idx[id]; if (i != null) rep[i] = 1; } }
+  else { ord = predOrderIdx(P, state.predOrder, state.predSeed); rep = repFromOrder(P, ord, Math.round(P.ds.length * state.predPct / 100)); }
+  const cur = predict(P, rep, state.predMethod);
+  let steps = null;
+  if (!manual) {
+    const ck = [rkey(state.year), state.et, state.predOrder, state.predSeed, state.predMethod].join("|");
+    if (!predCache || predCache.k !== ck) {
+      const st = []; for (let q = 2; q <= 100; q += 2) st.push({ q, r: predict(P, repFromOrder(P, ord, Math.round(P.ds.length * q / 100)), state.predMethod) });
+      predCache = { k: ck, steps: st };
+    }
+    steps = predCache.steps;
+  }
+  PRED_REPORTED = new Set(P.ds.filter((d, i) => rep[i]).map((d) => d.id));
+  return { P, rep, cur, steps, unc: cur.n ? predUncertainty(P, rep, state.predMethod, cur) : null };
+}
+function toggleReported(id, wholeKommun) {
+  const P = predPrepare(state.year); if (!P || P.idx[id] == null) return;
+  const ids = wholeKommun ? P.ds.filter((d) => d.k === P.ds[P.idx[id]].k).map((d) => d.id) : [id];
+  const on = !state.predManual.has(id);
+  for (const x of ids) on ? state.predManual.add(x) : state.predManual.delete(x);
+  refreshView();
+}
+const PRED_METHODS = ["uniform", "local", "similar", "combined"];
 function renderPred() {
   const el = $("#predpane");
   const RR = R();
   if (!RR || !RR.prev) { el.innerHTML = `<div class="simhead"><h2>${esc(t("pr_title"))}</h2><p class="note">${esc(t("pr_noprev", { y: state.year }))}</p></div>`; PRED_REPORTED = new Set(); return; }
-  const res = predRun(); const { cur, n, N } = res; PRED_REPORTED = res.reported;
-  const P = META.parties, base = PRED.prevNat || PRED.actual;
-  const shares = n ? cur.share : base;
-  const errs = shares.map((x, i) => 100 * (x - PRED.actual[i]));
+  const S = predState(); if (!S) return;
+  const { P, cur, steps, unc } = S, n = cur.n, N = P.ds.length, manual = state.predOrder === "manual";
+  const parties = META.parties, shares = n ? cur.share : (P.prevNat || P.actual);
+  const errs = shares.map((x, i) => 100 * (x - P.actual[i]));
   const mae = errs.reduce((a, b) => a + Math.abs(b), 0) / errs.length, worst = errs.map((e, i) => [Math.abs(e), i]).sort((a, b) => b[0] - a[0])[0];
-  const rows = P.map((p, i) => `<tr><td><i class="dot" style="background:${p.c}"></i>${p.k}</td><td class="v">${pct(100 * shares[i])}</td><td class="r">${n && cur.unc[i] != null ? "±" + fmt1(100 * cur.unc[i]) : ""}</td><td class="v">${pct(100 * PRED.actual[i])}</td><td class="r ${Math.abs(errs[i]) >= 1 ? "bad" : ""}">${sgn(errs[i])}</td></tr>`).join("");
+  const rows = parties.map((p, i) => {
+    const u = unc && unc.total[i] != null ? 100 * unc.total[i] : null;
+    const outside = u != null && Math.abs(errs[i]) > u;
+    return `<tr><td><i class="dot" style="background:${p.c}"></i>${p.k}</td><td class="v">${pct(100 * shares[i])}</td><td class="r">${u != null ? "±" + fmt1(u) : ""}</td><td class="v">${pct(100 * P.actual[i])}</td><td class="r ${outside ? "bad" : ""}">${sgn(errs[i])}${outside ? " !" : ""}</td></tr>`;
+  }).join("");
   let seatsHtml = "";
   if (state.et === "RD") {
-    const sp = seatsFor(shares), sa = seatsFor(PRED.actual);
-    const gov = ["M", "KD", "L", "SD"].reduce((a, k) => a + sp[PI[k]], 0), opp = ["S", "V", "MP", "C"].reduce((a, k) => a + sp[PI[k]], 0);
+    const sp = seatsFor(shares, state.year), sa = P.seats || seatsFor(P.actual, state.year);
     seatsHtml = `<div><h3 class="sec">${esc(t("pr_seats"))} <span>${esc(t("pr_majority"))}</span></h3>
-      <div class="seatbar">${P.slice(0, 8).map((p, i) => sp[i] ? `<div style="flex:${sp[i]};background:${p.c}" title="${p.k} ${sp[i]}"></div>` : "").join("")}<span class="mid"></span></div>
-      <div class="seatlist">${P.slice(0, 8).map((p, i) => `<span><b>${p.k}</b> ${sp[i]}<small> (${esc(t("pr_seats_actual"))} ${sa[i]})</small></span>`).join("")}</div>
-      <div class="note">M+KD+L+SD <b class="num">${gov}</b> · S+V+MP+C <b class="num">${opp}</b></div></div>`;
+      ${seatBarHtml(sp, t("pr_pred"))}${seatBarHtml(sa, t("pr_actual"), true)}
+      <div class="seatlist">${parties.slice(0, 8).map((p, i) => `<span><b>${p.k}</b> ${sp[i]}<small> (${esc(t("pr_seats_actual"))} ${sa[i]})</small></span>`).join("")}</div>
+      <details class="grpdet"><summary>${esc(t("grp_change"))}</summary>${groupEditorHtml()}</details></div>`;
   }
+  const uncNote = unc ? t(unc.bt ? "pr_unc_note" : "pr_unc_note_nobt", { y: unc.btYear ?? "" }) : "";
+  const methodBtns = PRED_METHODS.map((m) => `<button type="button" data-m="${m}" aria-pressed="${state.predMethod === m}" ${(m === "similar" || m === "combined") && !P.hasNN ? "disabled" : ""}>${esc(t("pr_m_" + m))}</button>`).join("");
   el.innerHTML = `<div class="simhead"><h2>${esc(t("pr_title"))}</h2>
-    <div><label class="ctl-label" for="predpct">${esc(t("pr_reported"))}: <span class="num">${state.predPct} %</span></label>
-      <div class="predrow"><input type="range" id="predpct" min="0" max="100" step="1" value="${state.predPct}"><button type="button" class="btn" id="predplay">${esc(predTimer ? t("pr_pause") : t("pr_play"))}</button></div></div>
+    ${manual ? `<div class="predrow"><span class="note">${esc(t("pr_manual_help"))}</span><button type="button" class="btn" id="predclear">${esc(t("pr_clear"))}</button></div>`
+      : `<div><label class="ctl-label" for="predpct">${esc(t("pr_reported"))}: <span class="num">${state.predPct} %</span></label>
+      <div class="predrow"><input type="range" id="predpct" min="0" max="100" step="1" value="${state.predPct}"><button type="button" class="btn" id="predplay">${esc(predTimer ? t("pr_pause") : t("pr_play"))}</button></div></div>`}
+    <div><span class="ctl-label">${esc(t("pr_method"))}</span><div class="seg methodseg" role="group" id="predmethod">${methodBtns}</div></div>
     <div class="opts">
-      <div class="seg" role="group" id="predmethod"><button type="button" data-m="uniform" aria-pressed="${state.predMethod === "uniform"}">${esc(t("pr_m_uniform"))}</button><button type="button" data-m="local" aria-pressed="${state.predMethod === "local"}">${esc(t("pr_m_local"))}</button></div>
-      <select id="predorder" aria-label="${esc(t("pr_order"))}">${["random", "small", "large"].map((o) => `<option value="${o}" ${state.predOrder === o ? "selected" : ""}>${esc(t("pr_order") + ": " + t("pr_order_" + o))}</option>`).join("")}</select>
+      <select id="predorder" aria-label="${esc(t("pr_order"))}">${["random", "small", "large", "manual"].map((o) => `<option value="${o}" ${state.predOrder === o ? "selected" : ""}>${esc(t("pr_order") + ": " + t("pr_order_" + o))}</option>`).join("")}</select>
       ${state.predOrder === "random" ? `<button type="button" class="linkbtn" id="predshuffle">${esc(t("pr_reshuffle"))}</button>` : ""}
     </div>
     <p class="note">${n ? esc(t("pr_counted", { n: fmtInt(n), N: fmtInt(N), v: fmtInt(cur.repV), p: pct(100 * cur.f) })) : esc(t("pr_none"))}</p></div>
     <div class="predbody">
       <table class="stats predtable"><thead><tr><th>${esc(t("pr_party"))}</th><th>${esc(t("pr_pred"))} ${state.year}</th><th></th><th>${esc(t("pr_actual"))}</th><th>${esc(t("pr_err"))}</th></tr></thead><tbody>${rows}</tbody></table>
-      <p class="note">${esc(t("pr_mae", { e: fmt2(mae), m: fmt1(worst[0]), k: P[worst[1]].k }))}</p>
+      <p class="note">${esc(t("pr_mae", { e: fmt2(mae), m: fmt1(worst[0]), k: parties[worst[1]].k }))}${uncNote ? " " + esc(uncNote) : ""}</p>
       ${seatsHtml}
-      <div><h3 class="sec">${esc(t("pr_chart"))}</h3><canvas id="predchart"></canvas></div>
+      ${steps ? `<div><h3 class="sec">${esc(t("pr_chart"))}</h3><canvas id="predchart"></canvas></div>` : ""}
       <details class="method"><summary>${esc(t("pr_method_title"))}</summary>${T[lang].pr_method_text.map((x) => `<p>${x}</p>`).join("")}</details>
     </div>`;
-  $("#predpct").addEventListener("input", (e) => { state.predPct = +e.target.value; refreshView(); });
-  $("#predplay").addEventListener("click", predPlay);
+  const pp = $("#predpct"); if (pp) pp.addEventListener("input", (e) => { state.predPct = +e.target.value; refreshView(); });
+  const pl = $("#predplay"); if (pl) pl.addEventListener("click", predPlay);
+  const pc = $("#predclear"); if (pc) pc.addEventListener("click", () => { state.predManual.clear(); refreshView(); });
   el.querySelectorAll("#predmethod button").forEach((b) => b.addEventListener("click", () => { state.predMethod = b.dataset.m; refreshView(); }));
-  $("#predorder").addEventListener("change", (e) => { state.predOrder = e.target.value; refreshView(); });
+  $("#predorder").addEventListener("change", (e) => { state.predOrder = e.target.value; if (predTimer) { clearInterval(predTimer); predTimer = null; } refreshView(); });
   const sh = $("#predshuffle"); if (sh) sh.addEventListener("click", () => { state.predSeed++; refreshView(); });
-  drawPredChart(res);
+  if (steps) drawPredChart(P, steps);
+}
+// Seat bar: group a from the left (largest party outermost), group b from the right, parties in neither in the middle.
+function seatBarHtml(seats, label, thin) {
+  const ps = META.parties.slice(0, 8).map((p, i) => ({ p, i, n: seats[i], g: state.groups[i] })).filter((x) => x.n);
+  const A = ps.filter((x) => x.g === "a").sort((x, y) => y.n - x.n), B = ps.filter((x) => x.g === "b").sort((x, y) => x.n - y.n), N = ps.filter((x) => x.g === "n").sort((x, y) => y.n - x.n);
+  const sum = (L) => L.reduce((a, x) => a + x.n, 0), sa = sum(A), sb = sum(B), sn = sum(N);
+  const seg = (x) => `<div class="${x.g === "n" ? "out" : ""}" style="flex:${x.n};background:${x.p.c}" title="${x.p.k} ${x.n}">${thin ? "" : `<span>${x.n >= 12 ? x.p.k : ""}</span>`}</div>`;
+  const maj = sa >= 175 ? "a" : sb >= 175 ? "b" : "";
+  return `<div class="seatrow${thin ? " thin" : ""}"><span class="sl">${esc(label)}</span>
+    <div class="seatbar">${[...A, ...N, ...B].map(seg).join("")}<span class="mid"></span></div>
+    <div class="seatsum"><span class="${maj === "a" ? "maj" : ""}">${grpName(OPP)} <b class="num">${sa}</b></span>${sn ? `<span class="nn">${grpName(N.map((x) => x.p.k))} <b class="num">${sn}</b></span>` : ""}<span class="${maj === "b" ? "maj" : ""}">${grpName(GOV)} <b class="num">${sb}</b></span></div></div>`;
 }
 function predPlay() {
   if (predTimer) { clearInterval(predTimer); predTimer = null; refreshView(); return; }
@@ -1665,17 +1819,17 @@ function predPlay() {
     state.predPct = Math.min(100, state.predPct + 1);
     if (state.predPct >= 100) { clearInterval(predTimer); predTimer = null; }
     refreshView();
-  }, 120);
+  }, 150);
   refreshView();
 }
-function drawPredChart(res) {
+function drawPredChart(P, steps) {
   const cv = $("#predchart"); if (!cv) return;
   const W = cv.clientWidth, H = 200, dpr = window.devicePixelRatio || 1;
   cv.style.height = H + "px"; cv.width = W * dpr; cv.height = H * dpr;
   const g = cv.getContext("2d"); g.scale(dpr, dpr);
   const L = 36, Rr = 34, Tp = 8, B = 24;
-  const top = META.parties.slice(0, 8).map((p, i) => [i, PRED.actual[i]]).sort((a, b) => b[1] - a[1]).slice(0, 5).map((x) => x[0]);
-  const vals = []; res.steps.forEach((s) => s.r && top.forEach((i) => vals.push(100 * s.r.share[i]))); top.forEach((i) => vals.push(100 * PRED.actual[i]));
+  const top = META.parties.slice(0, 8).map((p, i) => [i, P.actual[i]]).sort((a, b) => b[1] - a[1]).slice(0, 5).map((x) => x[0]);
+  const vals = []; steps.forEach((s) => top.forEach((i) => vals.push(100 * s.r.share[i]))); top.forEach((i) => vals.push(100 * P.actual[i]));
   const y0 = Math.max(0, Math.floor(Math.min(...vals) - 2)), y1 = Math.ceil(Math.max(...vals) + 2);
   const px = (q) => L + q / 100 * (W - L - Rr), py = (v) => Tp + (1 - (v - y0) / (y1 - y0)) * (H - Tp - B);
   g.font = "10.5px " + css("--font-mono"); g.fillStyle = css("--ink-3"); g.strokeStyle = css("--line"); g.lineWidth = 1;
@@ -1684,11 +1838,11 @@ function drawPredChart(res) {
   g.textAlign = "center"; g.textBaseline = "top"; [0, 25, 50, 75, 100].forEach((q) => g.fillText(q + "%", px(q), H - B + 6));
   for (const i of top) {
     const c = META.parties[i].c;
-    g.setLineDash([4, 3]); g.strokeStyle = c; g.globalAlpha = .6; g.beginPath(); g.moveTo(L, py(100 * PRED.actual[i])); g.lineTo(W - Rr, py(100 * PRED.actual[i])); g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
-    g.lineWidth = 2; g.strokeStyle = c; g.beginPath(); let first = true;
-    for (const s of res.steps) { if (!s.r) continue; const x = px(s.q), y = py(100 * s.r.share[i]); first ? g.moveTo(x, y) : g.lineTo(x, y); first = false; }
+    g.setLineDash([4, 3]); g.strokeStyle = c; g.globalAlpha = .6; g.beginPath(); g.moveTo(L, py(100 * P.actual[i])); g.lineTo(W - Rr, py(100 * P.actual[i])); g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
+    g.lineWidth = 2; g.strokeStyle = c; g.beginPath();
+    steps.forEach((s, k) => { const x = px(s.q), y = py(100 * s.r.share[i]); k ? g.lineTo(x, y) : g.moveTo(x, y); });
     g.stroke(); g.lineWidth = 1;
-    g.fillStyle = css("--ink-2"); g.textAlign = "left"; g.textBaseline = "middle"; g.fillText(META.parties[i].k, W - Rr + 4, py(100 * PRED.actual[i]));
+    g.fillStyle = css("--ink-2"); g.textAlign = "left"; g.textBaseline = "middle"; g.fillText(META.parties[i].k, W - Rr + 4, py(100 * P.actual[i]));
   }
   const xq = px(state.predPct); g.strokeStyle = css("--ink"); g.globalAlpha = .5; g.beginPath(); g.moveTo(xq, Tp); g.lineTo(xq, H - B); g.stroke(); g.globalAlpha = 1;
 }
@@ -1698,7 +1852,7 @@ function drawPredChart(res) {
 // ======================================================================
 function modeOptions() {
   const py = prevYear() ?? "–";
-  const res = [["winner", t("m_winner")], ["share", t("m_share")], ["change", t("m_change", { p: py })], ["bloc", t("m_bloc")], ["turnout", t("m_turnout")], ["turnoutchg", t("m_turnoutchg", { p: py })]];
+  const res = [["winner", t("m_winner")], ["share", t("m_share")], ["change", t("m_change", { p: py })], ["bloc", t("m_bloc", { a: grpName(OPP), b: grpName(GOV) })], ["turnout", t("m_turnout")], ["turnoutchg", t("m_turnoutchg", { p: py })]];
   const sim = [["simvote", t("m_simvote")], ["simdemo", t("m_simdemo")]];
   $("#mode").innerHTML = `<optgroup label="${esc(t("grp_result"))}">${res.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join("")}</optgroup>` +
     `<optgroup label="${esc(t("grp_sim"))}">${sim.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join("")}</optgroup>` +
@@ -1770,7 +1924,7 @@ function initControls() {
   $("#etype").addEventListener("click", (e) => { const b = e.target.closest("[data-et]"); if (b) setEt(b.dataset.et); });
   $("#year").addEventListener("click", (e) => { const b = e.target.closest("[data-y]"); if (b && +b.dataset.y !== state.year) setYear(+b.dataset.y); });
   $("#level").addEventListener("click", (e) => { const b = e.target.closest("[data-level]"); if (b) setLevel(b.dataset.level); });
-  $("#tabs").addEventListener("click", async (e) => { const b = e.target.closest("[data-view]"); if (!b) return; if (b.dataset.view === "odd") await ensureOdd(); setView(b.dataset.view); });
+  $("#tabs").addEventListener("click", async (e) => { const b = e.target.closest("[data-view]"); if (!b) return; if (b.dataset.view === "odd") await ensureOdd(); if (b.dataset.view === "pred") await loadPredData(); setView(b.dataset.view); });
   document.querySelectorAll(".lang button").forEach((b) => b.addEventListener("click", () => { lang = b.dataset.lang; LS("valkartan.lang", lang); applyLang(); refreshAll(); }));
   $("#zin").addEventListener("click", () => map.zoomIn());
   $("#zout").addEventListener("click", () => map.zoomOut());
@@ -1794,6 +1948,17 @@ function initControls() {
     let best = null, bd = 64; for (const p of scPts) { const d = (p.x - x) ** 2 + (p.y - y) ** 2; if (d < bd) { bd = d; best = p; } }
     if (best) select(state.level, best.id);
   });
+  // party groupings (detail panel and forecast)
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest(".grpchip"); if (!b) return;
+    const i = +b.dataset.grp, nx = { a: "b", b: "n", n: "a" }[state.groups[i]];
+    onGroupsChanged(state.groups.slice(0, i) + nx + state.groups.slice(i + 1));
+    document.querySelectorAll("details.grpdet").forEach((d) => d.open = true);
+  });
+  document.addEventListener("change", (e) => {
+    if (!e.target.classList.contains("grp-preset") || !GROUP_PRESETS[e.target.value]) return;
+    onGroupsChanged(GROUP_PRESETS[e.target.value]); document.querySelectorAll("details.grpdet").forEach((d) => d.open = true);
+  });
   initSearch();
   new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", retheme);
@@ -1807,6 +1972,7 @@ async function applyHashLive() {
   if (y !== state.year) await setYear(y);
   if (lang !== oldLang) applyLang();
   if (state.view === "odd") await ensureOdd();
+  if (state.view === "pred") await loadPredData();
   document.querySelectorAll("#parties .chip").forEach((c) => c.setAttribute("aria-pressed", c.dataset.p === state.party));
   if (state.sel && !byId[state.sel.lvl][state.sel.id]) state.sel = null;
   setOsm(state.osm); setOpacity(state.op, false); applyLevel(); setView(state.view); applySelection();
@@ -1871,6 +2037,7 @@ async function boot() {
     if (state.year !== 2026) await loadYear(state.year);
     if (state.simAvg) await loadAllYears();
     if (state.view === "odd") await ensureOdd();
+    if (state.view === "pred") await loadPredData();
     useGeo(state.year);
     const fc = GEOY[state.year];
     if (state.sel && !byId[state.sel.lvl][state.sel.id]) state.sel = null;
@@ -1882,7 +2049,7 @@ async function boot() {
     initMap(fc);
   } catch (err) { $("#loadmsg").textContent = err.message; console.error(err); }
 }
-window.valkartan = { state, get map() { return map; } };
+window.valkartan = { state, get map() { return map; }, pred: { loadPredData, predPrepare, predict, predOrderIdx, repFromOrder, seatsFor, predUncertainty } };
 boot();
 })();
 </script>
