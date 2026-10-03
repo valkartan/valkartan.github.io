@@ -106,7 +106,12 @@ select { width: 100%; padding: 7px 9px; border: 1px solid var(--line-strong); bo
 h3.sec { font: 600 11px/1.3 var(--font-body); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 8px; display: flex; justify-content: space-between; gap: 8px; }
 h3.sec span { text-transform: none; letter-spacing: 0; font-weight: 400; text-align: right; }
 
-.prow { display: grid; grid-template-columns: 34px minmax(0,1fr) 52px 52px; align-items: center; gap: 8px; height: 24px; }
+.prow { display: grid; grid-template-columns: 34px minmax(0,1fr) 74px 52px 46px; align-items: center; gap: 6px; height: 24px; }
+.prow .n { text-align: right; font: 400 12px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; }
+.prow.head { height: auto; font-size: 10.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+.prow.head span { text-align: right; }
+.orow span:first-child { flex: 1; }
+.orow .n { font: 400 12px var(--font-mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .prow .pk { font-weight: 600; font-size: 12.5px; }
 .bar { position: relative; height: 12px; background: var(--chip); border-radius: 0 3px 3px 0; }
 .bar .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 3px 3px 0; }
@@ -230,6 +235,7 @@ ol.rank.odd li { grid-template-columns: 34px minmax(0, 1fr) 0; }
 table.predtable th { text-align: right; font: 600 11px var(--font-body); color: var(--ink-3); padding: 4px 0 6px 8px; border-bottom: 1px solid var(--line-strong); }
 table.predtable th:first-child { text-align: left; padding-left: 0; }
 table.predtable td:first-child { font-weight: 600; }
+table.predtable td.v small { display: block; font-size: 10.5px; color: var(--ink-3); }
 table.predtable i.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
 table.predtable td.r.bad { color: var(--ink); font-weight: 600; }
 .seatbar { position: relative; display: flex; height: 16px; border-radius: 3px; overflow: hidden; gap: 1px; }
@@ -406,6 +412,7 @@ table.predtable td.r.bad { color: var(--ink); font-weight: 600; }
           </div>
           <div class="seg" role="group" id="lcols">
             <button type="button" data-cols="res" data-t="cols_res"></button>
+            <button type="button" data-cols="votes" data-t="cols_votes"></button>
             <button type="button" data-cols="chg" data-t="cols_chg"></button>
             <button type="button" data-cols="stat" data-t="cols_stat"></button>
             <button type="button" data-cols="sim" data-t="cols_sim"></button>
@@ -558,7 +565,9 @@ const T = {
     sim_demo_vd_old: "Befolkningsstatistik finns bara för 2026 års valdistrikt. Välj valet 2026, eller län eller kommuner.",
     sweden_result: "Rikets resultat {y}", show_more: "Visa fler", show_all: "Visa alla {n}",
     filter_ph: "Filtrera på namn eller kommun", count: "{a} av {b}",
-    cols_res: "Resultat", cols_chg: "Förändring", cols_stat: "Statistik", cols_sim: "Likhet",
+    cols_res: "Resultat", cols_votes: "Röster", cols_chg: "Förändring",
+    c_cast: "Avgivna", c_valid: "Giltiga", c_blank: "Blanka", votes_col: "Röster", share_col: "Andel", valid_votes: "Giltiga röster",
+    votes_tip: "{v} röster {y}", votes_tip_prev: "{p}: {v} ({d})", cols_stat: "Statistik", cols_sim: "Likhet",
     c_name: "Namn", c_parent_vd: "Kommun", c_parent_k: "Län", c_elig: "Röstber.", c_turn: "Valdelt.", c_win: "Störst", c_turnchg: "Valdelt. ±",
     c_simvote: "Röstavvikelse", c_simdemo: "Bef.avvikelse", c_simvote_avg: "Röstavv. snitt",
     ctx: "{lvl} · {et} {y}",
@@ -686,7 +695,9 @@ const T = {
     sim_demo_vd_old: "Population statistics exist only for the 2026 districts. Choose the 2026 election, or counties or municipalities.",
     sweden_result: "Sweden's result {y}", show_more: "Show more", show_all: "Show all {n}",
     filter_ph: "Filter by name or municipality", count: "{a} of {b}",
-    cols_res: "Results", cols_chg: "Change", cols_stat: "Statistics", cols_sim: "Similarity",
+    cols_res: "Results", cols_votes: "Votes", cols_chg: "Change",
+    c_cast: "Cast", c_valid: "Valid", c_blank: "Blank", votes_col: "Votes", share_col: "Share", valid_votes: "Valid votes",
+    votes_tip: "{v} votes in {y}", votes_tip_prev: "{p}: {v} ({d})", cols_stat: "Statistics", cols_sim: "Similarity",
     c_name: "Name", c_parent_vd: "Municipality", c_parent_k: "County", c_elig: "Eligible", c_turn: "Turnout", c_win: "Largest", c_turnchg: "Turnout ±",
     c_simvote: "Voting dev.", c_simdemo: "Pop. dev.", c_simvote_avg: "Voting dev. avg",
     ctx: "{lvl} · {y} {et}",
@@ -761,6 +772,7 @@ function niceRound(x, span) { const step = span > 200 ? 10 : span > 40 ? 1 : spa
 function rec(level, id, year = state.year) { const r = RES[rkey(year)]; return !r ? null : level === "riket" ? r.riket : r[level][id]; }
 function statsOf(level, id) { if (level === "riket") return ST.riket; if (level === "vd") return state.year === 2026 ? ST.vd[id] : null; return ST[level][id]; }
 function share(r, k) { const i = PI[k]; return r && r.v ? 100 * r.pv[i] / r.v : null; }
+const ps0 = (r) => !!(r && r.pp && r.vp);
 function prevShare(r, k) { const i = PI[k]; return r && r.pp && r.vp ? 100 * r.pp[i] / r.vp : null; }
 function turnout(r) { return r && r.e ? 100 * r.t / r.e : null; }
 function prevTurnout(r) { return r && r.ep && r.tp ? 100 * r.tp / r.ep : null; }
@@ -1052,7 +1064,7 @@ function applyParsed(o) {
   if (modes.includes(o.mode)) state.mode = o.mode;
   if (P.includes(o.party)) state.party = o.party;
   state.scY = state.party;
-  if (["res", "chg", "stat", "sim"].includes(o.cols)) state.cols = o.cols;
+  if (["res", "votes", "chg", "stat", "sim"].includes(o.cols)) state.cols = o.cols;
   if (["vote", "demo"].includes(o.simKind)) state.simKind = o.simKind;
   if (o.odd && ODD_CATS[o.odd]) state.odd = o.odd;
   if (o.predPct != null && o.predPct <= 100) state.predPct = o.predPct;
@@ -1248,11 +1260,13 @@ function renderDetail() {
       <div class="kpi"><b>${fmtInt(r.t)}</b><span>${esc(t("votes_cast"))}</span><div class="delta">${fmtInt(r.b)} ${esc(t("blank"))}</div></div></div>`;
     const maxShare = Math.max(...META.parties.map((p) => Math.max(share(r, p.k) || 0, prevShare(r, p.k) || 0)), 1);
     const rows = META.parties.map((p) => {
-      const s = share(r, p.k), ps = prevShare(r, p.k);
-      return `<div class="prow" title="${esc(p.n)}"><span class="pk">${p.k}</span>
+      const s = share(r, p.k), ps = prevShare(r, p.k), i = PI[p.k], nv = r.pv[i], pv = r.pp ? r.pp[i] : null;
+      const tip = p.n + ": " + t("votes_tip", { v: fmtInt(nv), y }) + (pv != null ? " · " + t("votes_tip_prev", { v: fmtInt(pv), p: py, d: (nv - pv >= 0 ? "+" : "−") + fmtInt(Math.abs(nv - pv)) }) : "");
+      return `<div class="prow" title="${esc(tip)}"><span class="pk">${p.k}</span>
         <div class="bar"><div class="fill" style="width:${(100 * (s || 0) / maxShare).toFixed(2)}%;background:${p.c}"></div>${ps != null ? `<div class="prev" style="left:calc(${(100 * ps / maxShare).toFixed(2)}% - 1px)"></div>` : ""}</div>
-        <span class="v">${pct(s)}</span><span class="d">${ps != null ? sgn(s - ps) : ""}</span></div>`;
+        <span class="n">${fmtInt(nv)}</span><span class="v">${pct(s)}</span><span class="d">${ps != null ? sgn(s - ps) : ""}</span></div>`;
     }).join("");
+    const rowsHead = `<div class="prow head" aria-hidden="true"><span></span><span></span><span>${esc(t("votes_col"))}</span><span>${esc(t("share_col"))}</span><span>${ps0(r) ? "±" : ""}</span></div>`;
     const gl = GOV.reduce((a, k) => a + share(r, k), 0), ol = OPP.reduce((a, k) => a + share(r, k), 0);
     const bloc = `<div class="bloc"><div class="blocbar" aria-hidden="true"><div style="flex:${ol};background:#c33b2e"></div><div style="flex:${Math.max(0, 100 - gl - ol)};background:var(--line-strong)"></div><div style="flex:${gl};background:#3d78c4"></div></div>
       <div style="display:flex;justify-content:space-between;gap:8px"><span>${grpName(OPP)} <b class="num">${pct(ol)}</b></span><span>${grpName(GOV)} <b class="num">${pct(gl)}</b></span></div>
@@ -1260,10 +1274,10 @@ function renderDetail() {
     const prevNote = r.pp ? t("bars_note", { y, p: py }) : !py ? t("no_prev") : lvl === "vd" ? t("no_prev_vd", { p: py }) : "";
     const others = (r.o || []).filter((o) => 100 * o[2] / r.v >= 0.5).slice(0, 6);
     const othersHtml = others.length ? `<div class="others"><div class="note">${esc(t("other_parties"))}</div>${others.map((o) =>
-      `<div class="orow"><span>${esc(o[1])}</span><b class="num">${pct(100 * o[2] / r.v)}</b></div>`).join("")}</div>` : "";
+      `<div class="orow"><span>${esc(o[1])}</span><span class="n">${fmtInt(o[2])}</span><b class="num">${pct(100 * o[2] / r.v)}</b></div>`).join("")}</div>` : "";
     const w = winner(r);
     const localNote = w && w.local ? `<p class="note"><b>${esc(t("largest_local", { n: w.name }))}</b></p>` : "";
-    body += `<div><h3 class="sec">${esc(t("vote_share_" + state.et, { y }))} <span>${esc(prevNote)}</span></h3>${localNote}${rows}${othersHtml}${bloc}</div>`;
+    body += `<div><h3 class="sec">${esc(t("vote_share_" + state.et, { y }))} <span>${esc(prevNote)}</span></h3>${localNote}${rowsHead}${rows}<div class="prow head" style="margin-top:2px"><span></span><span>${esc(t("valid_votes"))}</span><span>${fmtInt(r.v)}</span><span></span><span></span></div>${othersHtml}${bloc}</div>`;
     const SS = state.et === "RD" && (lvl === "riket" || lvl === "kommun" || lvl === "lan") ? officialSeats(y) : null;
     if (SS && lvl === "riket") body += `<div><h3 class="sec">${esc(t("seats_head", { y }))} <span>${esc(t("pr_majority"))}</span></h3>
       ${seatBarHtml(SS.a.total, t("seats_n"))}${seatsSectionHtml(SS, true)}<p class="note">${esc(t("seats_note"))}</p></div>`;
@@ -1419,6 +1433,12 @@ function listColumns() {
     cols.push({ key: "turn", label: t("c_turn"), get: (id) => turnout(rec(L, id)), fmt: fmt1 });
     for (const p of P) cols.push({ key: "p" + p.k, label: p.k, dot: p.c, get: (id) => share(rec(L, id), p.k), fmt: fmt1, bar: p.c });
     cols.push({ key: "win", label: t("c_win"), get: (id) => winner(rec(L, id))?.k ?? null, sortStr: true, fmt: (v) => v.length > 16 ? v.slice(0, 15) + "…" : v });
+  } else if (state.cols === "votes") {
+    cols.push({ key: "e", label: t("c_elig"), get: (id) => rec(L, id)?.e, fmt: fmtInt });
+    cols.push({ key: "t", label: t("c_cast"), get: (id) => rec(L, id)?.t, fmt: fmtInt });
+    cols.push({ key: "vv", label: t("c_valid"), get: (id) => rec(L, id)?.v, fmt: fmtInt });
+    cols.push({ key: "bl", label: t("c_blank"), get: (id) => rec(L, id)?.b, fmt: fmtInt });
+    for (const p of P) cols.push({ key: "n" + p.k, label: p.k, dot: p.c, get: (id) => { const r = rec(L, id); return r && r.pv ? r.pv[PI[p.k]] : null; }, fmt: fmtInt, bar: p.c });
   } else if (state.cols === "chg") {
     const d = (a, b) => a == null || b == null ? null : a - b;
     cols.push({ key: "turnc", label: t("c_turnchg"), get: (id) => { const r = rec(L, id); return d(turnout(r), prevTurnout(r)); }, fmt: (v) => sgn(v) });
@@ -1660,7 +1680,7 @@ function predPrepare(year) {
   // Those "central" votes are forecast from their share and size in the previous election (riket.cp).
   const rk = RR.riket, cp = rk.cp && rk.cp.v > 0 && rk.vp ? rk.cp : null;
   const central = cp ? { b: cp.pv.map((x) => Math.max(0, x) / cp.v), frac: cp.v / rk.vp } : null;
-  return (PREP[key] = { year, ds, idx, actual: rk.pv.map((x) => x / rk.v), totalV: rk.v, prevNat: natPrev, hasNN: !!nnd,
+  return (PREP[key] = { year, ds, idx, actual: rk.pv.map((x) => x / rk.v), actualV: rk.pv, totalV: rk.v, prevNat: natPrev, hasNN: !!nnd,
     central, seats: rk.ms || null });
 }
 function predOrderIdx(P, order, seed) {
@@ -1728,7 +1748,7 @@ function predict(P, rep, method, wt, outK) {
     if (outK) { const f = C / totV; for (const a of Object.values(outK)) { const kv = a.reduce((x, y) => x + y, 0); for (let p = 0; p < NP; p++) a[p] += f * kv * sh[p] / sum; } }
     totV += C;
   }
-  return { share: tot.map((x) => x / totV), repV, f: repV / P.totalV, n: rep.reduce((a, b) => a + b, 0) };
+  return { share: tot.map((x) => x / totV), repV, totV, f: repV / P.totalV, n: rep.reduce((a, b) => a + b, 0) };
 }
 function seatsFor(shares, year) {
   const main = shares.slice(0, 8), tot = shares.reduce((a, b) => a + b, 0), first = year < 2018 ? 1.4 : 1.2;
@@ -1801,7 +1821,7 @@ function renderPred() {
   const rows = parties.map((p, i) => {
     const u = unc && unc.total[i] != null ? 100 * unc.total[i] : null;
     const outside = u != null && Math.abs(errs[i]) > u;
-    return `<tr><td><i class="dot" style="background:${p.c}"></i>${p.k}</td><td class="v">${pct(100 * shares[i])}</td><td class="r">${u != null ? "±" + fmt1(u) : ""}</td><td class="v">${pct(100 * P.actual[i])}</td><td class="r ${outside ? "bad" : ""}">${sgn(errs[i])}${outside ? " !" : ""}</td></tr>`;
+    return `<tr><td><i class="dot" style="background:${p.c}"></i>${p.k}</td><td class="v">${pct(100 * shares[i])}<small>${n ? fmtInt(Math.round(shares[i] * (cur.totV || P.totalV) / 100) * 100) : ""}</small></td><td class="r">${u != null ? "±" + fmt1(u) : ""}</td><td class="v">${pct(100 * P.actual[i])}<small>${fmtInt(P.actualV[i])}</small></td><td class="r ${outside ? "bad" : ""}">${sgn(errs[i])}${outside ? " !" : ""}</td></tr>`;
   }).join("");
   let seatsHtml = "";
   if (state.et === "RD") {
