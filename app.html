@@ -358,6 +358,7 @@ table.predtable td.r.bad { color: var(--ink); font-weight: 600; }
       <div><span class="ctl-label" id="lvl-label" data-t="areas"></span>
         <div class="seg" role="group" aria-labelledby="lvl-label" id="level">
           <button type="button" data-level="lan" data-t="lvl_lan_p"></button>
+          <button type="button" data-level="vk" data-t="lvl_vk_p"></button>
           <button type="button" data-level="kommun" data-t="lvl_kommun_p"></button>
           <button type="button" data-level="vd" data-t="lvl_vd_p"></button>
         </div></div>
@@ -444,9 +445,10 @@ const T = {
   sv: {
     subtitle: "Riksdags-, region- och kommunval 2010–2026 per län, kommun och valdistrikt.",
     election: "År", areas: "Områden", colour_by: "Färglägg kartan efter", party: "Parti",
-    lvl_lan_p: "Län", lvl_kommun_p: "Kommuner", lvl_vd_p: "Valdistrikt",
-    lvl_lan: "Län", lvl_kommun: "Kommun", lvl_vd: "Valdistrikt", lvl_riket: "Hela landet",
-    plural_lan: "län", plural_kommun: "kommuner", plural_vd: "valdistrikt",
+    lvl_lan_p: "Län", lvl_kommun_p: "Kommuner", lvl_vd_p: "Valdistrikt", lvl_vk_p: "Valkretsar",
+    lvl_lan: "Län", lvl_kommun: "Kommun", lvl_vd: "Valdistrikt", lvl_riket: "Hela landet", lvl_vk: "Riksdagsvalkrets",
+    plural_lan: "län", plural_kommun: "kommuner", plural_vd: "valdistrikt", plural_vk: "riksdagsvalkretsar",
+    vk_stats_note: "Statistiken för valkretsar är kommunernas värden vägda efter folkmängd (medianen för ekonomisk standard blir därför ett medelvärde av medianer).",
     county_suffix: "län", sweden: "Sverige",
     view_map: "Karta", view_list: "Lista", view_sim: "Mest lik Sverige", view_odd: "Udda distrikt", view_pred: "Valvaka",
     pr_title: "Valvaka: prognos från de första distrikten", pr_reported: "Rapporterade valdistrikt", pr_play: "Spela upp", pr_pause: "Pausa",
@@ -574,9 +576,10 @@ const T = {
   en: {
     subtitle: "Riksdag, regional and municipal elections 2010–2026 by county, municipality and voting district.",
     election: "Year", areas: "Areas", colour_by: "Colour map by", party: "Party",
-    lvl_lan_p: "Counties", lvl_kommun_p: "Municipalities", lvl_vd_p: "Districts",
-    lvl_lan: "County", lvl_kommun: "Municipality", lvl_vd: "Voting district", lvl_riket: "Whole country",
-    plural_lan: "counties", plural_kommun: "municipalities", plural_vd: "districts",
+    lvl_lan_p: "Counties", lvl_kommun_p: "Municipalities", lvl_vd_p: "Districts", lvl_vk_p: "Constituencies",
+    lvl_lan: "County", lvl_kommun: "Municipality", lvl_vd: "Voting district", lvl_riket: "Whole country", lvl_vk: "Riksdag constituency",
+    plural_lan: "counties", plural_kommun: "municipalities", plural_vd: "districts", plural_vk: "Riksdag constituencies",
+    vk_stats_note: "Statistics for constituencies are the municipalities' values weighted by population (so median economic standard becomes an average of medians).",
     county_suffix: "county", sweden: "Sweden",
     view_map: "Map", view_list: "List", view_sim: "Most like Sweden", view_odd: "Odd districts", view_pred: "Election night",
     pr_title: "Election night: forecast from the first districts", pr_reported: "Districts reported", pr_play: "Play", pr_pause: "Pause",
@@ -761,8 +764,47 @@ function niceRound(x, span) { const step = span > 200 ? 10 : span > 40 ? 1 : spa
 // ======================================================================
 // Metrics
 // ======================================================================
-function rec(level, id, year = state.year) { const r = RES[rkey(year)]; return !r ? null : level === "riket" ? r.riket : r[level][id]; }
-function statsOf(level, id) { if (level === "riket") return ST.riket; if (level === "vd") return state.year === 2026 ? ST.vd[id] : null; return ST[level][id]; }
+function rec(level, id, year = state.year) { const r = RES[rkey(year)]; return !r ? null : level === "riket" ? r.riket : level === "vk" ? vkOf(r, year)[id] : r[level][id]; }
+function statsOf(level, id) { if (level === "riket") return ST.riket; if (level === "vd") return state.year === 2026 ? ST.vd[id] : null; return stTable(level)[id]; }
+function stTable(level) { return level === "vd" ? (state.year === 2026 ? ST.vd : {}) : level === "vk" ? vkStats(state.year) : ST[level]; }
+// ---- Riksdag constituencies (riksdagsvalkretsar): results and statistics summed from their municipalities ----
+const vkMap = (year) => SEATS?.years?.[year]?.map || SEATS?.years?.[2026]?.map || {};
+function vkOf(RR, year) {
+  if (RR._vk) return RR._vk;
+  const out = {}, mp = vkMap(RR.year || year), sum = (a, b) => a == null || b == null ? null : a + b;
+  for (const [k, r] of Object.entries(RR.kommun)) {
+    const vk = mp[k]; if (!vk) continue;
+    const o = out[vk];
+    if (!o) { out[vk] = { n: SEATS.names[vk], e: r.e, t: r.t, v: r.v, b: r.b, oi: r.oi, pv: r.pv.slice(), ep: r.ep ?? null, tp: r.tp ?? null, vp: r.vp ?? null, pp: r.pp ? r.pp.slice() : null, _o: {} }; }
+    else {
+      for (const f of ["e", "t", "v", "b", "oi"]) o[f] = (o[f] || 0) + (r[f] || 0);
+      for (const f of ["ep", "tp", "vp"]) o[f] = sum(o[f], r[f] ?? null);
+      r.pv.forEach((x, i) => { o.pv[i] += x; });
+      o.pp = o.pp && r.pp ? o.pp.map((x, i) => x + r.pp[i]) : null;
+    }
+    for (const x of r.o || []) { const m = out[vk]._o[x[0]] ||= [x[0], x[1], 0]; m[2] += x[2]; }
+  }
+  for (const o of Object.values(out)) { o.o = Object.values(o._o).sort((a, b) => b[2] - a[2]).slice(0, 10); delete o._o; if (!o.pp) { delete o.pp; delete o.ep; delete o.tp; delete o.vp; } }
+  return (RR._vk = out);
+}
+const VK_ST = {};
+function vkStats(year) {
+  const mp = vkMap(year), key = year < 2018 ? "old" : "new";
+  if (VK_ST[key]) return VK_ST[key];
+  const acc = {};
+  for (const [k, s] of Object.entries(ST.kommun)) {
+    const vk = mp[k]; if (!vk || !s || !s.pop) continue;
+    const a = acc[vk] ||= { pop: 0, area: 0, w: {}, x: {} };
+    a.pop += s.pop; if (s.dens) a.area += s.pop / s.dens;
+    for (const st of META.stats) { const f = st.k; if (f === "pop" || f === "dens" || s[f] == null) continue; a.x[f] = (a.x[f] || 0) + s[f] * s.pop; a.w[f] = (a.w[f] || 0) + s.pop; }
+  }
+  const out = {};
+  for (const [vk, a] of Object.entries(acc)) {
+    const o = out[vk] = { pop: a.pop, dens: a.area ? Math.round(10 * a.pop / a.area) / 10 : null };
+    for (const f of Object.keys(a.x)) o[f] = Math.round(10 * a.x[f] / a.w[f]) / 10;
+  }
+  return (VK_ST[key] = out);
+}
 function share(r, k) { const i = PI[k]; return r && r.v ? 100 * r.pv[i] / r.v : null; }
 const ps0 = (r) => !!(r && r.pp && r.vp);
 function prevShare(r, k) { const i = PI[k]; return r && r.pp && r.vp ? 100 * r.pp[i] / r.vp : null; }
@@ -790,17 +832,17 @@ function simVote(level, id) {
 }
 function simVoteAvg(level, id) {
   let s = 0, n = 0;
-  for (const y of typeYears()) { const rr = RES[rkey(y)]; if (!rr) continue; const d = dissim(rr[level][id], rr.riket); if (d != null) { s += d; n++; } }
+  for (const y of typeYears()) { const rr = RES[rkey(y)]; if (!rr) continue; const d = dissim(rec(level, id, y), rr.riket); if (d != null) { s += d; n++; } }
   return n ? s / n : null;
 }
 // --- similarity: demographics (RMS of standardised differences) ---
 const DEMO_CACHE = {};
 function demoStats(level) {
-  const key = level + (level === "vd" ? state.year : "");
+  const key = level + (level === "vd" || level === "vk" ? state.year : "");
   if (DEMO_CACHE[key]) return DEMO_CACHE[key];
   const tr = (k, v) => v == null ? null : k === "dens" ? Math.log10(Math.max(v, 0.1)) : v;
   const sd = {};
-  const src = level === "vd" ? (state.year === 2026 ? ST.vd : {}) : ST[level];
+  const src = stTable(level);
   for (const k of META.simStats) {
     const vals = Object.values(src).map((s) => tr(k, s && s[k])).filter((v) => v != null && isFinite(v));
     const m = vals.reduce((a, b) => a + b, 0) / (vals.length || 1);
@@ -877,7 +919,7 @@ function fmtMetric(v, mode = curMode()) {
 // ======================================================================
 // Scales
 // ======================================================================
-function levelIds(level = state.level) { return Object.keys(level === "vd" ? byId.vd : R()[level]); }
+function levelIds(level = state.level) { return Object.keys(level === "vd" ? byId.vd : level === "vk" ? vkOf(R(), state.year) : R()[level]); }
 function buildScale() {
   const mode = curMode(), lvl = state.level, ids = levelIds();
   if (mode === "pred") {
@@ -931,13 +973,22 @@ function topoToFC(topo, obj, idKey) {
   g.features.forEach((f) => { f.properties.id = f.properties[idKey]; f.bbox = bbox(f.geometry); });
   return g;
 }
+// Riksdag constituencies: merge each year's municipality shapes (shared arcs, so borders line up exactly)
+function vkFeatures(topo, y) {
+  const mp = vkMap(y), groups = {};
+  for (const g of topo.objects.kommun.geometries) { const vk = mp[g.properties.k]; if (vk) (groups[vk] ||= []).push(g); }
+  return { type: "FeatureCollection", features: Object.entries(groups).sort().map(([vk, gs]) => {
+    const geometry = topojson.merge(topo, gs);
+    return { type: "Feature", properties: { id: vk, n: SEATS.names[vk] }, geometry, bbox: bbox(geometry) };
+  }) };
+}
 function bbox(geom) {
   let x0 = 180, y0 = 90, x1 = -180, y1 = -90;
   const walk = (c) => { if (typeof c[0] === "number") { if (c[0] < x0) x0 = c[0]; if (c[0] > x1) x1 = c[0]; if (c[1] < y0) y0 = c[1]; if (c[1] > y1) y1 = c[1]; } else c.forEach(walk); };
   walk(geom.coordinates); return [x0, y0, x1, y1];
 }
 const SWEDEN = [[10.6, 55.2], [24.3, 69.1]];
-const LEVELS = ["lan", "kommun", "vd"];
+const LEVELS = ["lan", "vk", "kommun", "vd"];
 
 function initMap(fc) {
   map = new maplibregl.Map({
@@ -953,6 +1004,7 @@ function initMap(fc) {
       "fill-color": ["coalesce", ["feature-state", "c"], css("--nodata")], "fill-opacity": fillOpacity() } });
     map.addLayer({ id: "vd-line", type: "line", source: "vd", layout: { visibility: "none" }, minzoom: 5, paint: { "line-color": css("--map-line"), "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.2, 9, 0.6, 12, 1] } });
     map.addLayer({ id: "kommun-line", type: "line", source: "kommun", paint: { "line-color": css("--map-line-k"), "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.25, 8, 0.8, 11, 1.4] } });
+    map.addLayer({ id: "vk-line", type: "line", source: "vk", layout: { visibility: "none" }, paint: { "line-color": css("--map-line-l"), "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.8, 8, 1.8, 11, 2.6] } });
     map.addLayer({ id: "lan-line", type: "line", source: "lan", paint: { "line-color": css("--map-line-l"), "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.6, 8, 1.4, 11, 2.2] } });
     for (const lvl of LEVELS) {
       map.addLayer({ id: `${lvl}-sel`, type: "line", source: lvl, filter: ["==", ["get", "id"], ""], paint: { "line-color": css("--ink"), "line-width": 2.6 } });
@@ -1029,7 +1081,7 @@ function parseHash(h) {
     else if (/^g-[abn]{8}$/.test(tk)) o.groups = tk.slice(2);
     else if (tk.startsWith("e-")) o.et = tk.slice(2);
     else if (/^y\d{4}$/.test(tk)) o.year = +tk.slice(1);
-    else if (["lan", "kommun", "vd"].includes(tk)) o.level = tk;
+    else if (["lan", "vk", "kommun", "vd"].includes(tk)) o.level = tk;
     else if (tk.startsWith("m-")) o.mode = tk.slice(2).replace(/^stat-/, "stat:");
     else if (tk.startsWith("p-")) o.party = tk.slice(2);
     else if (tk.startsWith("s-")) { const [, l, id] = tk.split("-"); o.sel = { lvl: l, id }; }
@@ -1068,7 +1120,7 @@ function applyParsed(o) {
   state.simAvg = !!o.simAvg; state.simLeast = !!o.simLeast; state.osm = !!o.osm;
   state.op = o.op != null && o.op >= 0 && o.op <= 100 ? o.op : 100;
   if (o.lang) lang = o.lang;
-  state.sel = o.sel && ["lan", "kommun", "vd"].includes(o.sel.lvl) && o.sel.id ? o.sel : null;
+  state.sel = o.sel && ["lan", "vk", "kommun", "vd"].includes(o.sel.lvl) && o.sel.id ? o.sel : null;
 }
 let hashTimer = null, lastHash = "";
 function writeHash() {
@@ -1093,9 +1145,10 @@ function copyLink() {
 function parentName(level, id) {
   if (level === "vd") { const r = rec("vd", id) || byId.vd[id]?.properties; const k = r?.k; return k ? META.kommun[k]?.[0] || "" : ""; }
   if (level === "kommun") { const l = META.kommun[id]?.[1]; return l ? META.lan[l] + (lang === "sv" ? " län" : " county") : ""; }
+  if (level === "vk") return t("lvl_vk");
   return t("lvl_lan");
 }
-function areaName(level, id) { const r = rec(level, id); if (r) return r.n; if (level === "vd") return byId.vd[id]?.properties.n || id; if (level === "kommun") return META.kommun[id]?.[0] || id; return META.lan[id] || id; }
+function areaName(level, id) { const r = rec(level, id); if (r) return r.n; if (level === "vd") return byId.vd[id]?.properties.n || id; if (level === "kommun") return META.kommun[id]?.[0] || id; if (level === "vk") return SEATS?.names?.[id] || id; return META.lan[id] || id; }
 function onHover(e, lvl) {
   if (lvl !== state.level) return;
   const f = e.features[0]; if (!f) return;
@@ -1119,6 +1172,8 @@ function applyLevel() {
   for (const lvl of LEVELS) map.setLayoutProperty(`${lvl}-fill`, "visibility", lvl === state.level ? "visible" : "none");
   map.setLayoutProperty("vd-line", "visibility", state.level === "vd" ? "visible" : "none");
   map.setLayoutProperty("kommun-line", "visibility", state.level === "lan" ? "none" : "visible");
+  map.setLayoutProperty("vk-line", "visibility", state.level === "vk" ? "visible" : "none");
+  map.setLayoutProperty("lan-line", "visibility", state.level === "vk" ? "none" : "visible");
 }
 function recolor() {
   scale = buildScale();
@@ -1144,6 +1199,7 @@ function renderLegend() {
   if (missing) h += `<div class="lg-cats" style="margin-top:6px"><span><i style="background:var(--nodata);box-shadow:inset 0 0 0 1px var(--line-strong)"></i>${esc(t("no_data"))}</span></div>`;
   const notes = [];
   if (state.level === "vd" && (mode.startsWith("stat:") || mode === "simdemo")) notes.push(state.year === 2026 ? t("est_note") : t("stats_2026_only"));
+  if (state.level === "vk" && (mode.startsWith("stat:") || mode === "simdemo")) notes.push(t("vk_stats_note"));
   if ((mode === "change" || mode === "turnoutchg") && state.level === "vd") notes.push(t("nd_changed"));
   if (mode === "bloc") notes.push(t("bloc_note"));
   if (state.osm && osmFailed) notes.push(t("osm_failed"));
@@ -1183,7 +1239,7 @@ async function loadYear(y) {
   if (!GEOY[y]) {
     // each election has its own districts; municipality and county borders are dissolved from them so lines match
     const topo = y === 2026 ? GEO26 : await getJSON(`data/geo_vd_${y}.json`);
-    GEOY[y] = { vd: topoToFC(topo, "vd", "id"), kommun: topoToFC(topo, "kommun", "k"), lan: topoToFC(topo, "lan", "l") };
+    GEOY[y] = { vd: topoToFC(topo, "vd", "id"), kommun: topoToFC(topo, "kommun", "k"), lan: topoToFC(topo, "lan", "l"), vk: vkFeatures(topo, y) };
   }
 }
 function useGeo(y) { for (const l of LEVELS) byId[l] = Object.fromEntries(GEOY[y][l].features.map((f) => [f.properties.id, f])); }
@@ -1270,7 +1326,7 @@ function renderDetail() {
     const w = winner(r);
     const localNote = w && w.local ? `<p class="note"><b>${esc(t("largest_local", { n: w.name }))}</b></p>` : "";
     body += `<div><h3 class="sec">${esc(t("vote_share_" + state.et, { y }))} <span>${esc(prevNote)}</span></h3>${localNote}${rowsHead}${rows}<div class="prow head" style="margin-top:2px"><span></span><span>${esc(t("valid_votes"))}</span><span>${fmtInt(r.v)}</span><span></span><span></span></div>${othersHtml}${bloc}</div>`;
-    const SS = state.et === "RD" && (lvl === "riket" || lvl === "kommun" || lvl === "lan") ? officialSeats(y) : null;
+    const SS = state.et === "RD" && (lvl === "riket" || lvl === "kommun" || lvl === "lan" || lvl === "vk") ? officialSeats(y) : null;
     if (SS && lvl === "riket") body += `<div><h3 class="sec">${esc(t("seats_head", { y }))} <span>${esc(t("pr_majority"))}</span></h3>
       ${seatBarHtml(SS.a.total, t("seats_n"))}${seatsSectionHtml(SS, true)}<p class="note">${esc(t("seats_note"))}</p></div>`;
     else if (SS) body += `<div><h3 class="sec">${esc(t("vk_head"))} <span>${esc(t("vk_head_note", { y }))}</span></h3>${vkSeatsHtml(SS, lvl, id)}</div>`;
@@ -1284,7 +1340,7 @@ function renderDetail() {
       <div class="simcard"><span>${esc(t("sim_demo_lbl"))}</span><b>${sd == null ? "–" : fmt2(sd)}</b><span>${rd ? esc(t("rank_of", { r: fmtInt(rd.r), n: fmtInt(rd.n) })) : ""}</span></div></div></div>`;
   }
   if (lvl === "kommun") body += `<div><button type="button" class="btn primary" id="drill">${esc(t("drill_vd", { n: areaName(lvl, id) }))}</button></div>`;
-  if (lvl === "lan") body += `<div><button type="button" class="btn" id="drill">${esc(t("drill_k", { n: areaName(lvl, id) }))}</button></div>`;
+  if (lvl === "lan" || lvl === "vk") body += `<div><button type="button" class="btn" id="drill">${esc(t("drill_k", { n: areaName(lvl, id) }))}</button></div>`;
   // statistics
   const S = statsOf(lvl, id);
   if (S) {
@@ -1294,7 +1350,7 @@ function renderDetail() {
         <td class="v">${lvl === "vd" && v != null ? "≈ " : ""}${fmtStat(d.k, v)}</td>${lvl === "riket" ? "" : `<td class="r">${fmtStat(d.k, rv)}</td>`}</tr>`;
     }).join("");
     body += `<div><h3 class="sec">${esc(t("stats"))} <span>${lvl === "riket" ? "" : esc(t("right_sweden"))}</span></h3><table class="stats"><tbody>${statsRows}</tbody></table>
-      ${lvl === "vd" ? `<p class="note" style="margin-top:8px">${esc(t("est_long"))}</p>` : ""}</div>`;
+      ${lvl === "vd" ? `<p class="note" style="margin-top:8px">${esc(t("est_long"))}</p>` : lvl === "vk" ? `<p class="note" style="margin-top:8px">${esc(t("vk_stats_note"))}</p>` : ""}</div>`;
   } else if (lvl === "vd") {
     body += `<p class="note">${esc(t("stats_2026_only"))}</p>`;
   }
@@ -1354,6 +1410,8 @@ function drawScatter() {
   let inGroup = null;
   if (S && S.lvl === "kommun" && lvl === "vd") inGroup = (id) => (rec("vd", id) || byId.vd[id]?.properties)?.k === S.id;
   if (S && S.lvl === "lan" && lvl === "kommun") inGroup = (id) => META.kommun[id]?.[1] === S.id;
+  if (S && S.lvl === "vk" && lvl === "kommun") inGroup = (id) => vkMap(state.year)[id] === S.id;
+  if (S && S.lvl === "vk" && lvl === "vd") inGroup = (id) => vkMap(state.year)[(rec("vd", id) || byId.vd[id]?.properties)?.k] === S.id;
   if (S && S.lvl === "lan" && lvl === "vd") inGroup = (id) => META.kommun[(rec("vd", id) || byId.vd[id]?.properties)?.k]?.[1] === S.id;
   const focus = !!(sel || inGroup);
   const clampX = (x) => Math.max(L, Math.min(W - Rr, x)), clampY = (y) => Math.max(Tp, Math.min(H - B, y));
@@ -1418,7 +1476,7 @@ function pearson(x, y) { const n = x.length; let mx = 0, my = 0; for (let i = 0;
 function listColumns() {
   const L = state.level, P = META.parties, py = prevYear();
   const name = { key: "name", label: t("c_name"), cls: "l", get: (id) => areaName(L, id), sortStr: true };
-  const parent = L === "lan" ? [] : [{ key: "parent", label: L === "vd" ? t("c_parent_vd") : t("c_parent_k"), cls: "l", get: (id) => parentName(L, id).replace(/ (län|county)$/, ""), sortStr: true }];
+  const parent = L === "lan" || L === "vk" ? [] : [{ key: "parent", label: L === "vd" ? t("c_parent_vd") : t("c_parent_k"), cls: "l", get: (id) => parentName(L, id).replace(/ (län|county)$/, ""), sortStr: true }];
   const cols = [name, ...parent];
   if (state.cols === "res") {
     cols.push({ key: "e", label: t("c_elig"), get: (id) => rec(L, id)?.e, fmt: fmtInt });
@@ -1439,7 +1497,7 @@ function listColumns() {
     for (const s of META.stats) cols.push({ key: "s" + s.k, label: statName(s), title: statName(s), get: (id) => statsOf(L, id)?.[s.k] ?? null, fmt: (v) => fmtStat(s.k, v) });
   } else {
     cols.push({ key: "sv", label: t("c_simvote") + " " + state.year, get: (id) => dissim(rec(L, id), R().riket), fmt: fmt1 });
-    if (L !== "vd" && typeYears().every((y) => RES[rkey(y)])) cols.push({ key: "sva", label: t("c_simvote_avg"), get: (id) => { let s = 0, n = 0; for (const y of typeYears()) { const rr = RES[rkey(y)]; const v = dissim(rr[L][id], rr.riket); if (v != null) { s += v; n++; } } return n ? s / n : null; }, fmt: fmt1 });
+    if (L !== "vd" && typeYears().every((y) => RES[rkey(y)])) cols.push({ key: "sva", label: t("c_simvote_avg"), get: (id) => { let s = 0, n = 0; for (const y of typeYears()) { const rr = RES[rkey(y)]; const v = dissim(rec(L, id, y), rr.riket); if (v != null) { s += v; n++; } } return n ? s / n : null; }, fmt: fmt1 });
     cols.push({ key: "sd", label: t("c_simdemo"), get: (id) => simDemo(L, id), fmt: fmt2 });
   }
   return cols;
@@ -1982,7 +2040,7 @@ function seatsSectionHtml(S, withMargins) {
 // Constituency seats for a selected municipality or county.
 function vkSeatsHtml(S, lvl, id) {
   const mp = SEATS.years[S.year].map;
-  const vks = lvl === "kommun" ? [mp[id]] : [...new Set(Object.entries(mp).filter(([k]) => META.kommun[k]?.[1] === id).map(([, v]) => v))].sort();
+  const vks = lvl === "vk" ? [id] : lvl === "kommun" ? [mp[id]] : [...new Set(Object.entries(mp).filter(([k]) => META.kommun[k]?.[1] === id).map(([, v]) => v))].sort();
   return vks.filter(Boolean).map((vk) => {
     const f = S.a.fixed[vk], ad = S.a.adj[vk], n = S.fixed[vk];
     const chips = META.parties.slice(0, 8).map((p, i) => f[i] + ad[i] ? `<span><i class="dot" style="background:${p.c}"></i><b>${p.k}</b> ${f[i] + ad[i]}${ad[i] ? `<small> (${f[i]}+${ad[i]})</small>` : ""}</span>` : "").join("");
@@ -2172,6 +2230,7 @@ function retheme() {
   map.setPaintProperty("vd-line", "line-color", css("--map-line"));
   map.setPaintProperty("kommun-line", "line-color", css("--map-line-k"));
   map.setPaintProperty("lan-line", "line-color", css("--map-line-l"));
+  map.setPaintProperty("vk-line", "line-color", css("--map-line-l"));
   for (const l of LEVELS) { map.setPaintProperty(`${l}-sel`, "line-color", css("--ink")); map.setPaintProperty(`${l}-sel-halo`, "line-color", css("--panel")); map.setPaintProperty(`${l}-fill`, "fill-color", ["coalesce", ["feature-state", "c"], css("--nodata")]); }
   if (map.getLayer("osm")) for (const [k, v] of Object.entries(osmPaint())) map.setPaintProperty("osm", k, v);
   recolor(); drawScatter();
@@ -2184,6 +2243,7 @@ function buildSearchIndex() {
   INDEX = [
     ...Object.entries(META.lan).map(([id, n]) => ({ lvl: "lan", id, n: n + " " + t("county_suffix"), sub: t("lvl_lan") })),
     ...Object.entries(META.kommun).map(([id, v]) => ({ lvl: "kommun", id, n: v[0], sub: t("lvl_kommun") })),
+    ...Object.entries(SEATS?.names || {}).map(([id, n]) => ({ lvl: "vk", id, n, sub: t("lvl_vk") })),
     ...Object.entries(byId.vd).map(([id, f]) => ({ lvl: "vd", id, n: f.properties.n, sub: META.kommun[f.properties.k]?.[0] || "" })),
   ].map((o) => ({ ...o, key: o.n.toLocaleLowerCase("sv") }));
 }
