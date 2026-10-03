@@ -1,0 +1,1426 @@
+<title>Valkartan</title>
+<meta name="description" content="Riksdagsvalen 2010–2026 på karta och i listor, per län, kommun och valdistrikt, med SCB-statistik och jämförelser med riket.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a control + detail column on the left; the main area switches between map, sortable list, and "most like Sweden" (ranking + map). Stacks on phones. */
+:root {
+  --bg: #f3f4f1;
+  --panel: #fbfbf9;
+  --ink: #17191c;
+  --ink-2: #4c5157;
+  --ink-3: #7b8188;
+  --line: #dcded9;
+  --line-strong: #b9bdb6;
+  --water: #dfe6ea;
+  --ballot: #f2d33b;        /* the yellow Riksdag ballot paper */
+  --ballot-ink: #3d3200;
+  --accent: #1f5f8b;
+  --focus: #1f5f8b;
+  --nodata: #fdfdfb;
+  --row-sel: #fff4c2;
+  --map-line: rgba(30, 34, 38, .18);
+  --map-line-k: rgba(30, 34, 38, .45);
+  --map-line-l: rgba(20, 22, 26, .85);
+  --chip: #eceee9;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141618; --panel: #1b1e21; --ink: #eef0ee; --ink-2: #b8bdc1; --ink-3: #868c92;
+    --line: #2d3236; --line-strong: #464c51; --water: #101418; --ballot: #e6c62e; --ballot-ink: #2b2300;
+    --accent: #7fb6dd; --focus: #7fb6dd; --nodata: #1d2024; --row-sel: #3a3415; --map-line: rgba(0,0,0,.35);
+    --map-line-k: rgba(10,12,14,.75); --map-line-l: rgba(0,0,0,.95); --chip: #262a2e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141618; --panel: #1b1e21; --ink: #eef0ee; --ink-2: #b8bdc1; --ink-3: #868c92;
+  --line: #2d3236; --line-strong: #464c51; --water: #101418; --ballot: #e6c62e; --ballot-ink: #2b2300;
+  --accent: #7fb6dd; --focus: #7fb6dd; --nodata: #1d2024; --row-sel: #3a3415; --map-line: rgba(0,0,0,.35);
+  --map-line-k: rgba(10,12,14,.75); --map-line-l: rgba(0,0,0,.95); --chip: #262a2e; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.45 var(--font-body); margin: 0; }
+* { box-sizing: border-box; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.app { display: grid; grid-template-columns: 390px minmax(0, 1fr); height: 100%; }
+.side { background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.side-scroll { overflow-y: auto; flex: 1; min-height: 0; }
+.main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+
+header.brand { padding: 16px 20px 12px; border-bottom: 1px solid var(--line); display: grid; gap: 6px; }
+.brand-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.brand h1 { font: 700 26px/1.05 var(--font-display); letter-spacing: -.01em; margin: 0; }
+.ballot { display: inline-flex; align-items: center; gap: 6px; background: var(--ballot); color: var(--ballot-ink); font: 600 11px/1 var(--font-body);
+  letter-spacing: .06em; text-transform: uppercase; padding: 5px 8px 5px 7px; border-radius: 2px; }
+.ballot::before { content: ""; width: 9px; height: 11px; border: 1.5px solid currentColor; border-radius: 1px; }
+.lang { margin-left: auto; display: inline-flex; border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; }
+.lang button { border: 0; background: transparent; padding: 3px 8px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--ink-3); }
+.lang button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.brand p { margin: 0; color: var(--ink-2); font-size: 13px; }
+
+.controls { padding: 12px 20px 14px; display: grid; gap: 11px; border-bottom: 1px solid var(--line); }
+.ctl-row:empty { display: none; }
+.ctl-label { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; margin-bottom: 5px; display: block; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--chip); border-radius: 8px; padding: 3px; gap: 3px; }
+.seg button { border: 0; background: transparent; padding: 6px 4px; border-radius: 6px; cursor: pointer; font-weight: 500; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+select { width: 100%; padding: 7px 9px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--panel); }
+.chips { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
+.chip { border: 1px solid var(--line-strong); background: var(--panel); border-radius: 999px; padding: 3px 2px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500; min-width: 0; }
+.chip i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--chip); box-shadow: inset 0 0 0 1px var(--ink); }
+.search { position: relative; }
+.search input, .filter { width: 100%; padding: 7px 9px 7px 30px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--panel); }
+.search svg, .filterwrap svg { position: absolute; left: 9px; top: 9px; width: 14px; height: 14px; color: var(--ink-3); }
+.suggest { position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.14); z-index: 20; max-height: 280px; overflow-y: auto; padding: 4px; }
+.suggest button { display: flex; width: 100%; justify-content: space-between; gap: 8px; text-align: left; border: 0; background: transparent; padding: 6px 8px; border-radius: 5px; cursor: pointer; }
+.suggest button:hover, .suggest button.active { background: var(--chip); }
+.suggest small { color: var(--ink-3); white-space: nowrap; }
+
+.detail { padding: 16px 20px 24px; display: grid; gap: 18px; }
+.crumbs { display: flex; flex-wrap: wrap; gap: 4px; font-size: 12.5px; color: var(--ink-3); align-items: center; }
+.crumbs button, .linkbtn { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.area-kind { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.area-name { font: 700 24px/1.1 var(--font-display); margin: 2px 0 0; text-wrap: balance; }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+.kpi { border-top: 2px solid var(--ink); padding-top: 6px; min-width: 0; }
+.kpi b { display: block; font: 500 19px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
+.kpi span { font-size: 11.5px; color: var(--ink-3); }
+.delta { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-2); }
+h3.sec { font: 600 11px/1.3 var(--font-body); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 8px; display: flex; justify-content: space-between; gap: 8px; }
+h3.sec span { text-transform: none; letter-spacing: 0; font-weight: 400; text-align: right; }
+
+.prow { display: grid; grid-template-columns: 34px minmax(0,1fr) 52px 52px; align-items: center; gap: 8px; height: 24px; }
+.prow .pk { font-weight: 600; font-size: 12.5px; }
+.bar { position: relative; height: 12px; background: var(--chip); border-radius: 0 3px 3px 0; }
+.bar .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 3px 3px 0; }
+.bar .prev { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); opacity: .65; }
+.prow .v { text-align: right; font: 500 12.5px var(--font-mono); font-variant-numeric: tabular-nums; }
+.prow .d { text-align: right; font: 400 11.5px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.bloc { display: grid; gap: 4px; margin-top: 10px; font-size: 12px; color: var(--ink-2); }
+.blocbar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; }
+.note { font-size: 12px; color: var(--ink-3); margin: 0; }
+.simcards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.simcard { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 2px; }
+.simcard b { font: 500 18px/1.2 var(--font-mono); }
+.simcard span { font-size: 11.5px; color: var(--ink-3); }
+
+table.stats { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.stats td { padding: 5px 0; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+table.stats td.v { text-align: right; font: 500 12.5px var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 8px; }
+table.stats td.r { text-align: right; font: 400 11.5px var(--font-mono); color: var(--ink-3); white-space: nowrap; padding-left: 8px; width: 64px; }
+table.stats tr.on td:first-child { font-weight: 600; }
+table.stats button { border: 0; background: none; padding: 0; text-align: left; cursor: pointer; color: inherit; }
+table.stats button:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+.btn { border: 1px solid var(--line-strong); background: var(--panel); border-radius: 7px; padding: 7px 11px; cursor: pointer; font-weight: 500; }
+.btn:hover { background: var(--chip); }
+.btn.primary { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+
+#scatter { width: 100%; height: 240px; display: block; }
+.scatter-ctl { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.scatter-ctl select { font-size: 12.5px; padding: 5px 7px; }
+.about { font-size: 12px; color: var(--ink-3); display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 14px; }
+.about a { color: var(--accent); }
+.about p { margin: 0; }
+
+/* main area */
+.viewbar { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+.tabs { display: flex; gap: 2px; }
+.tabs button { border: 0; background: transparent; padding: 7px 12px; border-radius: 7px; cursor: pointer; font-weight: 500; color: var(--ink-2); display: inline-flex; align-items: center; gap: 7px; }
+.tabs button svg { width: 15px; height: 15px; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--panel); }
+.viewbar .ctx { margin-left: auto; font-size: 12.5px; color: var(--ink-3); }
+.linkbtn2 { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; font-size: 12.5px; }
+.linkbtn2 svg { width: 14px; height: 14px; }
+.linkbox { flex: 1 1 100%; padding: 6px 8px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--panel); font: 12px var(--font-mono); }
+.osmbtn { position: absolute; right: 14px; top: 122px; z-index: 5; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel); padding: 6px 10px; cursor: pointer; font-size: 12.5px; font-weight: 500; }
+.osmbtn svg { width: 15px; height: 15px; }
+.osmbtn[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.osmattr { position: absolute; right: 0; bottom: 0; z-index: 5; background: color-mix(in srgb, var(--panel) 85%, transparent); font-size: 11px; padding: 2px 6px; border-top-left-radius: 6px; }
+.osmattr a { color: var(--ink-2); }
+.views { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.views.sim { grid-template-columns: minmax(340px, 460px) minmax(0, 1fr); }
+.mapwrap { position: relative; min-width: 0; min-height: 0; background: var(--water); }
+#map { position: absolute; inset: 0; }
+.pane { min-width: 0; min-height: 0; overflow-y: auto; background: var(--panel); }
+.views.sim .pane { border-right: 1px solid var(--line); }
+
+/* list view */
+.listbar { position: sticky; top: 0; z-index: 3; background: var(--panel); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.filterwrap { position: relative; flex: 1 1 220px; max-width: 320px; }
+.listbar .seg { flex: 0 1 auto; }
+.listbar .count { font-size: 12.5px; color: var(--ink-3); margin-left: auto; }
+.tablewrap { }
+#listpane { overflow: auto; }
+.listbar { left: 0; }
+table.list { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.list th { position: sticky; top: var(--lbh, 53px); z-index: 2; background: var(--panel); text-align: right; font: 600 11.5px/1.2 var(--font-body); color: var(--ink-2); padding: 0; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+table.list th button { border: 0; background: none; width: 100%; padding: 9px 8px; text-align: inherit; cursor: pointer; font: inherit; color: inherit; display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end; }
+table.list th.l, table.list td.l { text-align: left; }
+table.list th.l button { justify-content: flex-start; }
+table.list th[aria-sort] button { color: var(--ink); }
+table.list th i.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+table.list td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: right; font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.list td.l { font-family: var(--font-body); font-size: 13px; white-space: normal; min-width: 140px; }
+table.list td.rk { color: var(--ink-3); width: 1%; }
+table.list td.l small { display: block; color: var(--ink-3); font-size: 11.5px; }
+table.list tbody tr { cursor: pointer; }
+table.list tbody tr:hover { background: var(--chip); }
+table.list tbody tr.sel { background: var(--row-sel); }
+.cellbar { position: relative; }
+.cellbar::before { content: ""; position: absolute; right: 4px; top: 50%; height: 4px; transform: translateY(5px); width: var(--w); background: var(--c); border-radius: 2px; opacity: .8; }
+.pos { color: var(--ink); } .negv { color: var(--ink-2); }
+.more { padding: 14px; display: flex; justify-content: center; }
+
+/* similarity view */
+.simhead { padding: 16px 18px 12px; display: grid; gap: 10px; border-bottom: 1px solid var(--line); }
+.simhead h2 { font: 700 22px/1.1 var(--font-display); margin: 0; }
+.simhead .opts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.simhead label.chk { display: inline-flex; gap: 6px; align-items: center; font-size: 12.5px; color: var(--ink-2); }
+details.method { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; background: var(--bg); font-size: 12.5px; color: var(--ink-2); }
+details.method summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+details.method p { margin: 8px 0 0; max-width: 62ch; }
+.natbar { display: flex; height: 14px; border-radius: 3px; overflow: hidden; gap: 1px; }
+.natlegend { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 11.5px; color: var(--ink-2); font-family: var(--font-mono); }
+.natlegend i { width: 8px; height: 8px; display: inline-block; border-radius: 2px; margin-right: 4px; }
+ol.rank { list-style: none; margin: 0; padding: 0; }
+ol.rank li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 4px 10px; padding: 9px 18px; border-bottom: 1px solid var(--line); cursor: pointer; align-items: center; }
+ol.rank li:hover { background: var(--chip); }
+ol.rank li.sel { background: var(--row-sel); }
+ol.rank .no { font: 500 13px var(--font-mono); color: var(--ink-3); }
+ol.rank .nm b { font-weight: 600; }
+ol.rank .nm small { display: block; color: var(--ink-3); font-size: 11.5px; }
+ol.rank .sc { font: 500 14px var(--font-mono); text-align: right; }
+ol.rank .sc small { display: block; font: 400 10.5px var(--font-body); color: var(--ink-3); }
+ol.rank .why { grid-column: 2 / 4; display: flex; gap: 6px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-2); }
+ol.rank .why span { background: var(--chip); border-radius: 4px; padding: 1px 6px; }
+.devs { grid-column: 2 / 4; width: 100%; height: 26px; display: block; }
+.simempty { padding: 18px; color: var(--ink-2); }
+
+/* map overlays */
+.legend { position: absolute; left: 14px; top: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px 10px;
+  max-width: min(360px, calc(100% - 70px)); box-shadow: 0 2px 10px rgba(0,0,0,.08); z-index: 5; }
+.legend .t { font-weight: 600; font-size: 12.5px; margin-bottom: 6px; }
+.legend .s { font-size: 11px; color: var(--ink-3); margin-top: 6px; }
+.lg-bins { display: flex; gap: 2px; }
+.lg-bins div { flex: 1; min-width: 26px; }
+.lg-bins i { display: block; height: 10px; border-radius: 2px; }
+.lg-bins span { display: block; font: 400 10.5px var(--font-mono); color: var(--ink-2); margin-top: 3px; white-space: nowrap; }
+.lg-cats { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; }
+.lg-cats span { display: inline-flex; align-items: center; gap: 5px; }
+.lg-cats i { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+.lg-ends { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; color: var(--ink-2); margin-top: 2px; }
+.zoom { position: absolute; right: 14px; top: 14px; display: grid; z-index: 5; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.zoom button { width: 34px; height: 32px; border: 0; background: var(--panel); cursor: pointer; font-size: 17px; line-height: 1; }
+.zoom button + button { border-top: 1px solid var(--line); }
+.zoom button:hover { background: var(--chip); }
+.tip { position: absolute; pointer-events: none; z-index: 10; background: var(--ink); color: var(--panel); padding: 6px 9px; border-radius: 6px; font-size: 12.5px;
+  max-width: 260px; transform: translate(12px, 12px); box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+.tip small { display: block; opacity: .75; font-size: 11px; }
+.tip b { font-family: var(--font-mono); font-weight: 500; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; z-index: 30; background: var(--water); color: var(--ink-2); font-size: 13px; }
+.loading.soft { background: color-mix(in srgb, var(--water) 55%, transparent); }
+.loading div { display: grid; gap: 8px; justify-items: center; }
+.loading i { width: 120px; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; position: relative; display: block; }
+.loading i::after { content: ""; position: absolute; inset: 0; width: 40%; background: var(--ink-2); animation: slide 1.1s ease-in-out infinite; }
+@keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+@media (prefers-reduced-motion: reduce) { .loading i::after { animation: none; } }
+
+.maplibregl-map { position: relative; overflow: hidden; -webkit-tap-highlight-color: transparent; font: inherit; }
+.maplibregl-canvas { position: absolute; left: 0; top: 0; }
+.maplibregl-canvas-container.maplibregl-interactive { cursor: grab; }
+.maplibregl-canvas-container.maplibregl-interactive:active { cursor: grabbing; }
+.maplibregl-canvas-container.pointer { cursor: pointer; }
+.maplibregl-ctrl-attrib, .maplibregl-ctrl-logo { display: none; }
+
+@media (max-width: 1100px) { .views.sim { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 40%; } .views.sim .pane { border-right: 0; border-bottom: 1px solid var(--line); } }
+@media (max-width: 820px) {
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; height: auto; }
+  .side { display: contents; }
+  header.brand { order: 1; padding-inline: 16px; }
+  .controls { order: 2; padding-inline: 16px; }
+  .main { order: 3; }
+  .side-scroll { order: 4; overflow: visible; }
+  .views { height: auto; }
+  .views:not(.list) .mapwrap { height: 58vh; }
+  .views.sim { grid-template-rows: none; }
+  .views.sim .pane { max-height: 70vh; }
+  .views.list .pane { max-height: 80vh; }
+  .detail { padding-inline: 16px; }
+  .legend { left: 8px; top: auto; bottom: 8px; max-width: calc(100% - 60px); padding: 8px 10px; }
+  .legend .s { display: none; }
+  .zoom { right: 8px; top: 8px; }
+  .osmbtn { right: 8px; top: 112px; padding: 8px; }
+  .osmbtn span { display: none; }
+  .viewbar .ctx { display: none; }
+  .tabs button { padding: 7px 9px; }
+}
+</style>
+
+<div class="app">
+  <aside class="side">
+    <header class="brand">
+      <div class="brand-row">
+        <h1>Valkartan</h1><span class="ballot" id="ballot">Riksdag</span>
+        <div class="lang" role="group" aria-label="Språk / Language">
+          <button type="button" data-lang="sv" lang="sv">SV</button><button type="button" data-lang="en" lang="en">EN</button>
+        </div>
+      </div>
+      <p id="subtitle"></p>
+    </header>
+    <div class="controls">
+      <div><span class="ctl-label" id="yr-label" data-t="election"></span>
+        <div class="seg" role="group" aria-labelledby="yr-label" id="year"></div></div>
+      <div><span class="ctl-label" id="lvl-label" data-t="areas"></span>
+        <div class="seg" role="group" aria-labelledby="lvl-label" id="level">
+          <button type="button" data-level="lan" data-t="lvl_lan_p"></button>
+          <button type="button" data-level="kommun" data-t="lvl_kommun_p"></button>
+          <button type="button" data-level="vd" data-t="lvl_vd_p"></button>
+        </div></div>
+      <div id="mode-ctl">
+        <label class="ctl-label" for="mode" data-t="colour_by"></label>
+        <select id="mode"></select>
+      </div>
+      <div id="party-ctl" hidden>
+        <span class="ctl-label" data-t="party"></span>
+        <div class="chips" id="parties" role="group"></div>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+        <input id="q" type="search" autocomplete="off">
+        <div class="suggest" id="suggest" hidden></div>
+      </div>
+    </div>
+    <div class="side-scroll">
+      <section class="detail" id="detail" aria-live="polite"></section>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="viewbar">
+      <div class="tabs" role="tablist" id="tabs">
+        <button type="button" role="tab" data-view="map"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1.5 3.5l4-1.5 5 2 4-1.5v10l-4 1.5-5-2-4 1.5z"/><path d="M5.5 2v10M10.5 4v10"/></svg><span data-t="view_map"></span></button>
+        <button type="button" role="tab" data-view="list"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5.5 4h9M5.5 8h9M5.5 12h9"/><circle cx="2.5" cy="4" r=".9" fill="currentColor"/><circle cx="2.5" cy="8" r=".9" fill="currentColor"/><circle cx="2.5" cy="12" r=".9" fill="currentColor"/></svg><span data-t="view_list"></span></button>
+        <button type="button" role="tab" data-view="sim"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><circle cx="8" cy="8" r="3.2"/><circle cx="8" cy="8" r=".8" fill="currentColor"/></svg><span data-t="view_sim"></span></button>
+      </div>
+      <span class="ctx" id="ctx"></span>
+      <button type="button" class="btn linkbtn2" id="copylink"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6.5 9.5l3-3"/><path d="M7 4.5l1.2-1.2a2.8 2.8 0 014 4L11 8.5"/><path d="M9 11.5l-1.2 1.2a2.8 2.8 0 01-4-4L5 7.5"/></svg><span data-t="copy_link"></span></button>
+      <input id="linkbox" class="linkbox" type="text" readonly hidden aria-label="Link">
+    </div>
+    <div class="views" id="views">
+      <section class="pane" id="simpane" hidden></section>
+      <section class="pane" id="listpane" hidden>
+        <div class="listbar">
+          <div class="filterwrap">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+            <input class="filter" id="lfilter" type="search" autocomplete="off">
+          </div>
+          <div class="seg" role="group" id="lcols">
+            <button type="button" data-cols="res" data-t="cols_res"></button>
+            <button type="button" data-cols="chg" data-t="cols_chg"></button>
+            <button type="button" data-cols="stat" data-t="cols_stat"></button>
+            <button type="button" data-cols="sim" data-t="cols_sim"></button>
+          </div>
+          <span class="count" id="lcount"></span>
+        </div>
+        <div class="tablewrap"><table class="list" id="ltable"><thead></thead><tbody></tbody></table></div>
+        <div class="more" id="lmore" hidden><button type="button" class="btn" id="lmorebtn"></button></div>
+      </section>
+      <div class="mapwrap" id="mapwrap">
+        <div id="map" role="region"></div>
+        <button type="button" class="osmbtn" id="osmbtn" aria-pressed="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 2l6 3-6 3-6-3z"/><path d="M2 8l6 3 6-3"/><path d="M2 11l6 3 6-3"/></svg><span data-t="osm"></span></button>
+        <div class="osmattr" id="osmattr" hidden><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" data-t="osm_attr"></a></div>
+        <div class="zoom">
+          <button type="button" id="zin">+</button>
+          <button type="button" id="zout">−</button>
+          <button type="button" id="zall">⤢</button>
+        </div>
+        <div class="legend" id="legend"></div>
+        <div class="tip" id="tip" hidden></div>
+        <div class="loading" id="loading"><div><i></i><span id="loadmsg">Laddar karta och valresultat…</span></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+(() => {
+"use strict";
+// ======================================================================
+// Texts
+// ======================================================================
+const T = {
+  sv: {
+    subtitle: "Riksdagsvalen 2010–2026 per län, kommun och valdistrikt.",
+    election: "Val", areas: "Områden", colour_by: "Färglägg kartan efter", party: "Parti",
+    lvl_lan_p: "Län", lvl_kommun_p: "Kommuner", lvl_vd_p: "Valdistrikt",
+    lvl_lan: "Län", lvl_kommun: "Kommun", lvl_vd: "Valdistrikt", lvl_riket: "Hela landet",
+    plural_lan: "län", plural_kommun: "kommuner", plural_vd: "valdistrikt",
+    county_suffix: "län", sweden: "Sverige",
+    view_map: "Karta", view_list: "Lista", view_sim: "Mest lik Sverige",
+    search_ph: "Sök kommun eller valdistrikt", no_match: "Ingen träff",
+    grp_result: "Valresultat", grp_sim: "Likhet med riket", grp_stats: "Statistik (SCB)",
+    m_winner: "Största parti", m_share: "Partiets andel", m_change: "Partiets förändring sedan {p}",
+    m_bloc: "M+KD+L+SD mot S+V+MP+C", m_turnout: "Valdeltagande", m_turnoutchg: "Förändring i valdeltagande sedan {p}",
+    m_simvote: "Röstlikhet med riket", m_simdemo: "Befolkningslikhet med riket",
+    share_of: "{n} ({k}), andel av rösterna", change_of: "{n} ({k}), förändring sedan {p}",
+    turnout: "Valdeltagande", eligible: "Röstberättigade", votes_cast: "Avgivna röster", blank: "blanka",
+    vs: "mot {p}", pp: "p.e.", vote_share: "Röstfördelning riksdagsval {y}",
+    bars_note: "Stapel: {y} · streck: {p} · höger: förändring i procentenheter",
+    no_prev_vd: "Ingen jämförelse: valdistriktet har ändrats sedan {p}.",
+    no_prev: "Ingen jämförelse med tidigare val.",
+    largest_lead: "Blekare = mindre ledning (under 30 %, 30–40 %, 40–50 %, över 50 %).",
+    decrease: "Minskning", increase: "Ökning",
+    bloc_left: "S+V+MP+C större", bloc_right: "M+KD+L+SD större", bloc_note: "Skillnad i procentenheter mellan gruppernas sammanlagda andelar.",
+    no_data: "Uppgift saknas", nd_changed: "Uppgift saknas: valdistriktet har ändrats sedan förra valet.",
+    est_note: "Distriktens statistik är skattad från SCB:s DeSO-områden.",
+    more_like: "Mer lik riket", less_like: "Mindre lik riket",
+    stats: "Statistik", right_sweden: "höger: Sverige",
+    est_long: "≈ Skattade värden. SCB redovisar statistiken för DeSO-områden, som här har fördelats på valdistrikten med SCB:s befolkningsrutor (1 km).",
+    stats_2026_only: "Statistik finns bara för 2026 års valdistrikt. Välj valet 2026 för att se den.",
+    drill_vd: "Visa valdistrikten i {n}", drill_k: "Visa kommunerna i {n}", n_vd: "{n} valdistrikt",
+    compare_all: "Jämför alla {pl}", share_axis: "Andel {k}", y_axis: "Lodrät axel", x_axis: "Vågrät axel",
+    scatter_note: "Varje punkt är ett av {n} {pl}. x: {x}{log}. Korrelation r = {r}.{sel}", log: ", logaritmisk skala", ring: " Markerad punkt: valt område. Kors: Sverige.", ring_group: " Färgade punkter: områden i {n}.",
+    scatter_none: "Statistik saknas för den här nivån och det här valet.",
+    scatter_none_old: "Statistiken finns bara för 2026 års valdistrikt, så diagrammet är tomt för valdistrikt i tidigare val. Välj 2026, eller kommuner eller län.",
+    sel_missing: " {n} saknar uppgift för den här kombinationen och syns därför inte.",
+    copy_link: "Kopiera länk", link_copied: "Länken kopierad", link_select: "Markera och kopiera",
+    osm: "Bakgrundskarta", osm_title: "Visa OpenStreetMap under valkartan",
+    osm_failed: "Bakgrundskartan kunde inte laddas här. Den visas när sidan körs på en egen webbplats.",
+    osm_attr: "© OpenStreetMap-bidragsgivare",
+    sim_head: "Likhet med riket", sim_vote: "Röstning", sim_demo: "Befolkning", sim_vote_lbl: "Röstavvikelse", sim_demo_lbl: "Befolkningsavvikelse",
+    rank_of: "plats {r} av {n}", most_like: "Mest lik", least_like: "Minst lik",
+    avg_all: "Snitt för alla val 2010–2026",
+    sim_title_vote: "Röstade mest som Sverige ({y})", sim_title_vote_avg: "Röstade mest som Sverige, snitt 2010–2026",
+    sim_title_demo: "Befolkning mest lik Sverige",
+    sim_title_vote_least: "Röstade minst som Sverige ({y})", sim_title_vote_avg_least: "Röstade minst som Sverige, snitt 2010–2026",
+    sim_title_demo_least: "Befolkning minst lik Sverige",
+    method: "Så räknas det",
+    method_vote: [
+      "Måttet är <b>avvikelseindex</b> (dissimilaritetsindex): för varje parti tas skillnaden mellan områdets andel och rikets andel, skillnaderna läggs ihop utan tecken och summan halveras. Övriga partier räknas som ett nionde parti.",
+      "Talet går att läsa direkt: <b>så många procent av områdets röster hade behövt läggas på ett annat parti</b> för att resultatet skulle bli exakt som rikets. 0 betyder identiskt.",
+      "Jag valde det här måttet för att det är lätt att förstå, vanligt i valgeografi, och väger varje röst lika oavsett parti. Ett kvadratiskt mått (t.ex. euklidiskt avstånd) skulle straffa en stor avvikelse för ett parti hårdare än flera små; det ger nästan samma topplista men är svårare att tolka.",
+      "Bara partifördelningen jämförs, inte valdeltagandet. Jämförelsen görs mot rikets officiella resultat samma år. Distriktens resultat saknar de röster som räknas centralt i varje kommun (uppsamlingsdistrikt), vilket påverkar alla distrikt ungefär lika. Snittet för alla val går bara för kommuner och län, eftersom valdistrikten ritas om mellan valen."
+    ],
+    method_demo: [
+      "Måttet jämför områdets befolkning med rikets på nio indikatorer: medelnettoinkomst, median ekonomisk standard, andel med minst treårig eftergymnasial utbildning, sysselsättningsgrad, andel utrikes födda, andel födda utanför Europa, andel 0–19 år, andel 65+ år och befolkningstäthet (logaritmerad).",
+      "Varje skillnad mot riket delas med hur mycket indikatorn normalt varierar mellan områden på samma nivå (standardavvikelsen), så att kronor, procent och invånare per km² blir jämförbara. Talet är kvadratiska medelvärdet av de nio standardiserade skillnaderna: 0 = som riket, 1 = i snitt en standardavvikelse ifrån.",
+      "För befolkningstäthet jämförs med den täthet en genomsnittlig invånare bor i (befolkningsviktat medelvärde), inte rikets totala täthet på 20 invånare/km², som domineras av glesbygden i norr. Folkmängd ingår inte, eftersom storlek inte säger något om hur befolkningen ser ut. Statistiken är den senaste från SCB (2024–2025). För valdistrikt är värdena skattade och finns bara för 2026 års indelning."
+    ],
+    sim_demo_vd_old: "Befolkningsstatistik finns bara för 2026 års valdistrikt. Välj valet 2026, eller län eller kommuner.",
+    sweden_result: "Rikets resultat {y}", show_more: "Visa fler", show_all: "Visa alla {n}",
+    filter_ph: "Filtrera på namn eller kommun", count: "{a} av {b}",
+    cols_res: "Resultat", cols_chg: "Förändring", cols_stat: "Statistik", cols_sim: "Likhet",
+    c_name: "Namn", c_parent_vd: "Kommun", c_parent_k: "Län", c_elig: "Röstber.", c_turn: "Valdelt.", c_win: "Störst", c_turnchg: "Valdelt. ±",
+    c_simvote: "Röstavvikelse", c_simdemo: "Bef.avvikelse", c_simvote_avg: "Röstavv. snitt",
+    ctx: "{lvl} · val {y}",
+    zoom_in: "Zooma in", zoom_out: "Zooma ut", zoom_all: "Visa hela Sverige", map_label: "Valkarta",
+    loading: "Laddar karta och valresultat…", loading_year: "Laddar valet {y}…",
+    err_lib: "Kartbiblioteket kunde inte laddas. Kontrollera anslutningen och ladda om sidan.",
+    err_data: "Kunde inte ladda data ({s}).",
+    sources: "Källor", src_text: "Valresultat: Valmyndigheten, <a href=\"https://resultat.val.se/val2026/RD?r=S\" target=\"_blank\" rel=\"noopener\">resultat.val.se</a> (2022, 2026) och <a href=\"https://historik.val.se/\" target=\"_blank\" rel=\"noopener\">historik.val.se</a> (2010–2018). Statistik: <a href=\"https://www.statistikdatabasen.scb.se/\" target=\"_blank\" rel=\"noopener\">SCB:s statistikdatabas</a> och SCB:s geodata (DeSO 2025, befolkning per km-ruta 2025).",
+    src_note: "Distriktens andelar räknas utan centralt räknade röster (uppsamlingsdistrikt); kommun-, läns- och riksresultat innehåller dem. Täthet räknas på hela områdets yta, sjöar inräknade. Gruppen M+KD+L+SD mot S+V+MP+C följer 2022–2026 års politiska läge och används för alla år för jämförbarhetens skull.",
+    biggest_dev: "Störst avvikelse", above: "över", below: "under",
+  },
+  en: {
+    subtitle: "Riksdag elections 2010–2026 by county, municipality and voting district.",
+    election: "Election", areas: "Areas", colour_by: "Colour map by", party: "Party",
+    lvl_lan_p: "Counties", lvl_kommun_p: "Municipalities", lvl_vd_p: "Districts",
+    lvl_lan: "County", lvl_kommun: "Municipality", lvl_vd: "Voting district", lvl_riket: "Whole country",
+    plural_lan: "counties", plural_kommun: "municipalities", plural_vd: "districts",
+    county_suffix: "county", sweden: "Sweden",
+    view_map: "Map", view_list: "List", view_sim: "Most like Sweden",
+    search_ph: "Find a municipality or district", no_match: "No match",
+    grp_result: "Election result", grp_sim: "Similarity to Sweden", grp_stats: "Statistics (SCB)",
+    m_winner: "Largest party", m_share: "Party share", m_change: "Party change since {p}",
+    m_bloc: "M+KD+L+SD vs S+V+MP+C", m_turnout: "Turnout", m_turnoutchg: "Turnout change since {p}",
+    m_simvote: "Voting similarity to Sweden", m_simdemo: "Population similarity to Sweden",
+    share_of: "{n} ({k}), share of votes", change_of: "{n} ({k}), change since {p}",
+    turnout: "Turnout", eligible: "Eligible voters", votes_cast: "Votes cast", blank: "blank",
+    vs: "vs {p}", pp: "pp", vote_share: "Riksdag vote share {y}",
+    bars_note: "Bars: {y} · tick: {p} · right: change in pp",
+    no_prev_vd: "No comparison: district boundaries changed since {p}.",
+    no_prev: "No earlier election to compare with.",
+    largest_lead: "Paler = smaller lead (under 30%, 30–40%, 40–50%, over 50%).",
+    decrease: "Decrease", increase: "Increase",
+    bloc_left: "S+V+MP+C ahead", bloc_right: "M+KD+L+SD ahead", bloc_note: "Percentage points between the two groups' combined shares.",
+    no_data: "No data", nd_changed: "No data: district boundaries changed since the previous election.",
+    est_note: "District statistics are estimates from SCB DeSO areas.",
+    more_like: "More like Sweden", less_like: "Less like Sweden",
+    stats: "Statistics", right_sweden: "right: Sweden",
+    est_long: "≈ Estimated. SCB publishes these statistics for DeSO areas, which were split across districts using SCB's 1 km population grid.",
+    stats_2026_only: "Statistics exist only for the 2026 districts. Choose the 2026 election to see them.",
+    drill_vd: "Show voting districts in {n}", drill_k: "Show municipalities in {n}", n_vd: "{n} voting districts",
+    compare_all: "Compare all {pl}", share_axis: "{k} share", y_axis: "Vertical axis", x_axis: "Horizontal axis",
+    scatter_note: "Each dot is one of {n} {pl}. x: {x}{log}. Correlation r = {r}.{sel}", log: ", log scale", ring: " Highlighted dot: selected area. Cross: Sweden.", ring_group: " Coloured dots: areas in {n}.",
+    scatter_none: "No statistics for this level and election.",
+    scatter_none_old: "Statistics exist only for the 2026 districts, so the chart is empty for districts in earlier elections. Choose 2026, or municipalities or counties.",
+    sel_missing: " {n} has no value for this combination, so it isn't shown.",
+    copy_link: "Copy link", link_copied: "Link copied", link_select: "Select and copy",
+    osm: "Background map", osm_title: "Show OpenStreetMap under the election map",
+    osm_failed: "The background map could not load here. It appears when the page runs on your own website.",
+    osm_attr: "© OpenStreetMap contributors",
+    sim_head: "Similarity to Sweden", sim_vote: "Voting", sim_demo: "Population", sim_vote_lbl: "Voting deviation", sim_demo_lbl: "Population deviation",
+    rank_of: "rank {r} of {n}", most_like: "Most alike", least_like: "Least alike",
+    avg_all: "Average over all elections 2010–2026",
+    sim_title_vote: "Voted most like Sweden ({y})", sim_title_vote_avg: "Voted most like Sweden, 2010–2026 average",
+    sim_title_demo: "Population most like Sweden",
+    sim_title_vote_least: "Voted least like Sweden ({y})", sim_title_vote_avg_least: "Voted least like Sweden, 2010–2026 average",
+    sim_title_demo_least: "Population least like Sweden",
+    method: "How it is calculated",
+    method_vote: [
+      "The measure is the <b>index of dissimilarity</b>: for each party, take the difference between the area's share and Sweden's share, add up the differences ignoring sign, and halve the sum. All other parties count as a ninth party.",
+      "The number reads directly as <b>the percentage of the area's votes that would have to go to a different party</b> for the result to match Sweden's exactly. 0 means identical.",
+      "I chose it because it is easy to explain, standard in electoral geography, and weighs every vote equally whatever the party. A squared measure (such as Euclidean distance) would punish one big miss harder than several small ones; it gives almost the same top list but is harder to read.",
+      "Only the party split is compared, not turnout. The comparison is with Sweden's official result in the same year. District results leave out votes counted centrally in each municipality (uppsamlingsdistrikt), which affects all districts about equally. The all-election average is offered only for municipalities and counties, because districts are redrawn between elections."
+    ],
+    method_demo: [
+      "The measure compares an area's population with Sweden's on nine indicators: mean net income, median disposable income per consumption unit, share with at least three years of post-secondary education, employment rate, share born abroad, share born outside Europe, share aged 0–19, share aged 65+, and population density (log scale).",
+      "Each difference from Sweden is divided by how much that indicator normally varies between areas at the same level (the standard deviation), so kronor, percentages and people per km² become comparable. The score is the root mean square of the nine standardised differences: 0 = like Sweden, 1 = one standard deviation away on average.",
+      "For population density the reference is the density the average resident lives in (a population-weighted mean), not Sweden's overall 20 people per km², which is dominated by the sparsely populated north. Population size is left out because size says nothing about what the population is like. Statistics are SCB's latest (2024–2025). For districts the values are estimates and exist only for the 2026 boundaries."
+    ],
+    sim_demo_vd_old: "Population statistics exist only for the 2026 districts. Choose the 2026 election, or counties or municipalities.",
+    sweden_result: "Sweden's result {y}", show_more: "Show more", show_all: "Show all {n}",
+    filter_ph: "Filter by name or municipality", count: "{a} of {b}",
+    cols_res: "Results", cols_chg: "Change", cols_stat: "Statistics", cols_sim: "Similarity",
+    c_name: "Name", c_parent_vd: "Municipality", c_parent_k: "County", c_elig: "Eligible", c_turn: "Turnout", c_win: "Largest", c_turnchg: "Turnout ±",
+    c_simvote: "Voting dev.", c_simdemo: "Pop. dev.", c_simvote_avg: "Voting dev. avg",
+    ctx: "{lvl} · {y} election",
+    zoom_in: "Zoom in", zoom_out: "Zoom out", zoom_all: "Show all of Sweden", map_label: "Election map",
+    loading: "Loading map and results…", loading_year: "Loading the {y} election…",
+    err_lib: "The map library did not load. Check the connection and reload the page.",
+    err_data: "Could not load data ({s}).",
+    sources: "Sources", src_text: "Results: Valmyndigheten, <a href=\"https://resultat.val.se/val2026/RD?r=S\" target=\"_blank\" rel=\"noopener\">resultat.val.se</a> (2022, 2026) and <a href=\"https://historik.val.se/\" target=\"_blank\" rel=\"noopener\">historik.val.se</a> (2010–2018). Statistics: <a href=\"https://www.statistikdatabasen.scb.se/\" target=\"_blank\" rel=\"noopener\">SCB Statistikdatabasen</a> and SCB geodata (DeSO 2025, 1 km population grid 2025).",
+    src_note: "District shares exclude centrally counted votes (uppsamlingsdistrikt); municipal, county and national results include them. Density uses each area's total extent, lakes included. The M+KD+L+SD vs S+V+MP+C grouping reflects 2022–2026 politics and is applied to every year for comparability.",
+    biggest_dev: "Largest deviations", above: "above", below: "below",
+  }
+};
+const LS = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } };
+let lang = LS("valkartan.lang") === "en" ? "en" : "sv";
+const t = (k, p = {}) => { let s = (T[lang][k] ?? T.sv[k] ?? k); if (typeof s === "string") for (const [a, b] of Object.entries(p)) s = s.split("{" + a + "}").join(b); return s; };
+const loc = () => lang === "sv" ? "sv-SE" : "en-US";
+
+// ======================================================================
+// State and helpers
+// ======================================================================
+const GOV = ["M", "KD", "L", "SD"], OPP = ["S", "V", "MP", "C"];
+const state = { year: 2026, view: "map", level: "kommun", mode: "winner", party: "S", sel: null, scX: "inc", scY: "S",
+  simKind: "vote", simAvg: false, simLeast: false, simLimit: 50, cols: "res", sort: { key: "name", dir: 1 }, lfilter: "", llimit: 300, osm: false };
+let META, ST, PI = {}, RES = {}, GEO26, map, mapReady = false, byId = { lan: {}, kommun: {}, vd: {} }, VDGEO = {}, hoverId = null, scale = null;
+const $ = (s) => document.querySelector(s);
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const nf = (d) => (n) => n == null || isNaN(n) ? "–" : n.toLocaleString(loc(), { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtInt = nf(0), fmt1 = nf(1), fmt0 = nf(0), fmt2 = nf(2);
+const pct = (n) => n == null || isNaN(n) ? "–" : fmt1(n) + (lang === "sv" ? " %" : "%");
+const sgn = (n, d = 1) => { if (n == null || isNaN(n)) return ""; const r = Math.abs(n) < 0.5 * Math.pow(10, -d) ? 0 : n; return (r > 0 ? "+" : r < 0 ? "−" : "±") + nf(d)(Math.abs(r)); };
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const R = () => RES[state.year];
+const prevYear = () => R().prev;
+
+function hex2rgb(h) { h = h.replace("#", ""); return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+function rgb2hex(r) { return "#" + r.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join(""); }
+function mix(a, b, k) { const A1 = hex2rgb(a), B1 = hex2rgb(b); return rgb2hex(A1.map((v, i) => v + (B1[i] - v) * k)); }
+function isDark() { return css("color-scheme") === "dark"; }
+function base() { return isDark() ? "#23272b" : "#f4f4f0"; }
+const SEQ = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"];
+const SIMR = ["#d6efe9", "#a8dccf", "#74c3b3", "#46a696", "#2a8778", "#19695d", "#0e4b43"];
+const DIV_NEG = ["#0d366b", "#256abf", "#6da7ec"], DIV_POS = ["#f0a07f", "#d9573a", "#9c2a17"];
+function seqFor(color) { const b = base(), dark = mix(color, "#000000", .45); return [mix(b, color, .14), mix(b, color, .3), mix(b, color, .48), mix(b, color, .68), mix(b, color, .86), color, dark]; }
+function quantile(sorted, q) { const p = (sorted.length - 1) * q, lo = Math.floor(p), hi = Math.ceil(p); return sorted[lo] + (sorted[hi] - sorted[lo]) * (p - lo); }
+function niceRound(x, span) { const step = span > 200 ? 10 : span > 40 ? 1 : span > 8 ? 0.5 : span > 1.5 ? 0.1 : 0.05; return Math.round(x / step) * step; }
+
+// ======================================================================
+// Metrics
+// ======================================================================
+function rec(level, id, year = state.year) { const r = RES[year]; return !r ? null : level === "riket" ? r.riket : r[level][id]; }
+function statsOf(level, id) { if (level === "riket") return ST.riket; if (level === "vd") return state.year === 2026 ? ST.vd[id] : null; return ST[level][id]; }
+function share(r, k) { const i = PI[k]; return r && r.v ? 100 * r.pv[i] / r.v : null; }
+function prevShare(r, k) { const i = PI[k]; return r && r.pp && r.vp ? 100 * r.pp[i] / r.vp : null; }
+function turnout(r) { return r && r.e ? 100 * r.t / r.e : null; }
+function prevTurnout(r) { return r && r.ep && r.tp ? 100 * r.tp / r.ep : null; }
+function blocLead(r) { if (!r || !r.v) return null; let g = 0, o = 0; for (const k of GOV) g += share(r, k); for (const k of OPP) o += share(r, k); return g - o; }
+function winner(r) { if (!r || !r.v) return null; let best = null, bv = -1; META.parties.forEach((p, i) => { if (p.k !== "ÖVR" && r.pv[i] > bv) { bv = r.pv[i]; best = p.k; } }); return { k: best, s: 100 * bv / r.v }; }
+function statDef(k) { return META.stats.find((s) => s.k === k); }
+const statName = (d) => d[lang];
+const statUnit = (d) => d["u_" + lang];
+
+// --- similarity: voting (index of dissimilarity, pp) ---
+function dissim(r, nat) { if (!r || !r.v || !nat) return null; let s = 0; for (let i = 0; i < r.pv.length; i++) s += Math.abs(100 * r.pv[i] / r.v - 100 * nat.pv[i] / nat.v); return s / 2; }
+function simVote(level, id) {
+  if (state.simAvg && level !== "vd" && state.view === "sim") return simVoteAvg(level, id);
+  return dissim(rec(level, id), R().riket);
+}
+function simVoteAvg(level, id) {
+  let s = 0, n = 0;
+  for (const y of META.years) { const rr = RES[y]; if (!rr) continue; const d = dissim(rr[level][id], rr.riket); if (d != null) { s += d; n++; } }
+  return n ? s / n : null;
+}
+// --- similarity: demographics (RMS of standardised differences) ---
+const DEMO_CACHE = {};
+function demoStats(level) {
+  const key = level + (level === "vd" ? state.year : "");
+  if (DEMO_CACHE[key]) return DEMO_CACHE[key];
+  const tr = (k, v) => v == null ? null : k === "dens" ? Math.log10(Math.max(v, 0.1)) : v;
+  const sd = {};
+  const src = level === "vd" ? (state.year === 2026 ? ST.vd : {}) : ST[level];
+  for (const k of META.simStats) {
+    const vals = Object.values(src).map((s) => tr(k, s && s[k])).filter((v) => v != null && isFinite(v));
+    const m = vals.reduce((a, b) => a + b, 0) / (vals.length || 1);
+    sd[k] = Math.sqrt(vals.reduce((a, b) => a + (b - m) ** 2, 0) / Math.max(1, vals.length - 1)) || 1;
+  }
+  // Reference density: what the average resident lives in (population-weighted mean of log density),
+  // because Sweden's overall density is dominated by the almost empty north.
+  let sw = 0, sp = 0;
+  for (const s of Object.values(src)) if (s && s.dens != null && s.pop) { sw += s.pop * tr("dens", s.dens); sp += s.pop; }
+  const refDens = sp ? sw / sp : tr("dens", ST.riket.dens);
+  return (DEMO_CACHE[key] = { sd, tr, refDens });
+}
+function simDemo(level, id, detail = false) {
+  const s = statsOf(level, id); if (!s) return null;
+  const { sd, tr, refDens } = demoStats(level), nat = ST.riket;
+  let sum = 0, n = 0; const devs = [];
+  for (const k of META.simStats) {
+    const a = tr(k, s[k]), b = k === "dens" ? refDens : tr(k, nat[k]); if (a == null || b == null) continue;
+    const z = (a - b) / sd[k]; sum += z * z; n++; devs.push({ k, z, v: s[k], nat: nat[k] });
+  }
+  if (n < 6) return null;
+  const d = Math.sqrt(sum / n);
+  return detail ? { d, devs: devs.sort((x, y) => Math.abs(y.z) - Math.abs(x.z)) } : d;
+}
+
+function curMode() { return state.view === "sim" ? (state.simKind === "vote" ? "simvote" : "simdemo") : state.mode; }
+function metricValue(level, id, mode = curMode()) {
+  const r = rec(level, id);
+  switch (mode) {
+    case "share": return share(r, state.party);
+    case "change": { const a = share(r, state.party), b = prevShare(r, state.party); return a == null || b == null ? null : a - b; }
+    case "turnout": return turnout(r);
+    case "turnoutchg": { const a = turnout(r), b = prevTurnout(r); return a == null || b == null ? null : a - b; }
+    case "bloc": return blocLead(r);
+    case "winner": return winner(r);
+    case "simvote": return simVote(level, id);
+    case "simdemo": return simDemo(level, id);
+    default: { const s = statsOf(level, id); return s ? s[mode.slice(5)] ?? null : null; }
+  }
+}
+function metricLabel(mode = curMode()) {
+  const p = META.parties[PI[state.party]], py = prevYear();
+  switch (mode) {
+    case "winner": return t("m_winner");
+    case "share": return t("share_of", { n: p.n, k: p.k });
+    case "change": return t("change_of", { n: p.n, k: p.k, p: py ?? "–" });
+    case "turnout": return t("m_turnout");
+    case "turnoutchg": return t("m_turnoutchg", { p: py ?? "–" });
+    case "bloc": return t("m_bloc");
+    case "simvote": return t("sim_vote_lbl") + (lang === "sv" ? " (procent av rösterna)" : " (% of votes)");
+    case "simdemo": return t("sim_demo_lbl") + (lang === "sv" ? " (standardavvikelser)" : " (standard deviations)");
+    default: { const d = statDef(mode.slice(5)); return statName(d) + (statUnit(d) ? ` (${statUnit(d)})` : ""); }
+  }
+}
+function fmtStat(k, v) { const d = statDef(k); if (v == null) return "–"; const s = d.fmt === "int" ? fmtInt(v) : d.fmt === "0" ? fmt0(v) : fmt1(v); return d.u_sv === "%" ? s + (lang === "sv" ? " %" : "%") : s; }
+function fmtMetric(v, mode = curMode()) {
+  if (v == null) return t("no_data");
+  switch (mode) {
+    case "winner": return `${v.k} ${pct(v.s)}`;
+    case "share": case "turnout": return pct(v);
+    case "change": case "turnoutchg": case "bloc": return sgn(v) + " " + t("pp");
+    case "simvote": return fmt1(v) + (lang === "sv" ? " %" : "%");
+    case "simdemo": return fmt2(v);
+    default: return fmtStat(mode.slice(5), v);
+  }
+}
+
+// ======================================================================
+// Scales
+// ======================================================================
+function levelIds(level = state.level) { return Object.keys(level === "vd" ? byId.vd : R()[level]); }
+function buildScale() {
+  const mode = curMode(), lvl = state.level, ids = levelIds();
+  if (mode === "winner") {
+    const present = new Set(ids.map((id) => winner(rec(lvl, id))?.k).filter(Boolean));
+    return { type: "cat", present, color: (v) => { if (!v) return null; const c = META.parties[PI[v.k]].c; const k = v.s < 30 ? .42 : v.s < 40 ? .62 : v.s < 50 ? .82 : 1; return mix(base(), c, k); } };
+  }
+  const vals = ids.map((id) => metricValue(lvl, id)).filter((v) => v != null && isFinite(v)).sort((a, b) => a - b);
+  if (!vals.length) return { type: "none", color: () => null };
+  if (mode === "change" || mode === "turnoutchg" || mode === "bloc") {
+    let m = Math.max(Math.abs(quantile(vals, .03)), Math.abs(quantile(vals, .97)));
+    m = Math.max(niceRound(m, m) || m, 0.5);
+    const edges = [-m, -m * 2 / 3, -m / 3, -m / 9, m / 9, m / 3, m * 2 / 3, m];
+    let neg = DIV_NEG, pos = DIV_POS, ends = [t("decrease"), t("increase")];
+    if (mode === "bloc") { neg = ["#7a1010", "#c33b2e", "#ec9a86"]; pos = ["#a9c7ea", "#3d78c4", "#123f7a"]; ends = [t("bloc_left"), t("bloc_right")]; }
+    const mid = isDark() ? "#55595e" : "#d9d8d2";
+    const colors = [neg[0], neg[1], neg[2], mid, pos[0], pos[1], pos[2]];
+    if (mode === "change") { const s = seqFor(META.parties[PI[state.party]].c); colors.splice(4, 3, s[2], s[4], s[6]); }
+    const color = (v) => { if (v == null) return null; for (let i = 1; i < edges.length - 1; i++) if (v < edges[i]) return colors[i - 1]; return colors[6]; };
+    return { type: "div", edges, colors, color, ends };
+  }
+  const n = 7; let edges = [];
+  for (let i = 0; i <= n; i++) edges.push(quantile(vals, i / n));
+  const span = vals[vals.length - 1] - vals[0];
+  edges = edges.map((e, i) => i === 0 || i === n ? e : niceRound(e, span));
+  edges = edges.filter((e, i) => i === 0 || e > edges[i - 1] + 1e-9);
+  const k = edges.length - 1;
+  const sim = mode === "simvote" || mode === "simdemo";
+  let ramp = mode === "share" ? seqFor(META.parties[PI[state.party]].c) : sim ? SIMR.slice() : SEQ.slice();
+  if (sim) ramp.reverse();                 // most similar = darkest
+  if (isDark() && mode !== "share") ramp.reverse();
+  const pick = (i) => ramp[Math.round(i * (ramp.length - 1) / Math.max(1, k - 1))];
+  const colors = Array.from({ length: k }, (_, i) => pick(i));
+  const color = (v) => { if (v == null) return null; for (let i = 1; i < edges.length - 1; i++) if (v < edges[i]) return colors[i - 1]; return colors[k - 1]; };
+  return { type: "seq", edges, colors, color, ends: sim ? [t("more_like"), t("less_like")] : null };
+}
+
+// ======================================================================
+// Map
+// ======================================================================
+function topoToFC(topo, obj, idKey) {
+  const g = topojson.feature(topo, topo.objects[obj]);
+  g.features.forEach((f) => { f.properties.id = f.properties[idKey]; f.bbox = bbox(f.geometry); });
+  return g;
+}
+function bbox(geom) {
+  let x0 = 180, y0 = 90, x1 = -180, y1 = -90;
+  const walk = (c) => { if (typeof c[0] === "number") { if (c[0] < x0) x0 = c[0]; if (c[0] > x1) x1 = c[0]; if (c[1] < y0) y0 = c[1]; if (c[1] > y1) y1 = c[1]; } else c.forEach(walk); };
+  walk(geom.coordinates); return [x0, y0, x1, y1];
+}
+const SWEDEN = [[10.6, 55.2], [24.3, 69.1]];
+const LEVELS = ["lan", "kommun", "vd"];
+
+function initMap(fc) {
+  map = new maplibregl.Map({
+    container: "map", attributionControl: false, dragRotate: false, pitchWithRotate: false, touchPitch: false,
+    bounds: SWEDEN, fitBoundsOptions: { padding: 24 }, maxBounds: [[-40, 45], [75, 76]], minZoom: 2.5, maxZoom: 15,
+    style: { version: 8, sources: {}, layers: [{ id: "bg", type: "background", paint: { "background-color": css("--water") } }] },
+  });
+  map.touchZoomRotate.disableRotation();
+  map.on("error", (e) => { if (e && e.sourceId === "osm" && !osmFailed) { osmFailed = true; renderLegend(); } });
+  map.on("load", () => {
+    for (const lvl of LEVELS) map.addSource(lvl, { type: "geojson", data: fc[lvl], promoteId: "id", tolerance: 0.25 });
+    for (const lvl of LEVELS) map.addLayer({ id: `${lvl}-fill`, type: "fill", source: lvl, layout: { visibility: "none" }, paint: {
+      "fill-color": ["coalesce", ["feature-state", "c"], css("--nodata")], "fill-opacity": fillOpacity() } });
+    map.addLayer({ id: "vd-line", type: "line", source: "vd", layout: { visibility: "none" }, minzoom: 5, paint: { "line-color": css("--map-line"), "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.2, 9, 0.6, 12, 1] } });
+    map.addLayer({ id: "kommun-line", type: "line", source: "kommun", paint: { "line-color": css("--map-line-k"), "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.25, 8, 0.8, 11, 1.4] } });
+    map.addLayer({ id: "lan-line", type: "line", source: "lan", paint: { "line-color": css("--map-line-l"), "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.6, 8, 1.4, 11, 2.2] } });
+    for (const lvl of LEVELS) {
+      map.addLayer({ id: `${lvl}-sel`, type: "line", source: lvl, filter: ["==", ["get", "id"], ""], paint: { "line-color": css("--ink"), "line-width": 2.6 } });
+      map.addLayer({ id: `${lvl}-sel-halo`, type: "line", source: lvl, filter: ["==", ["get", "id"], ""], paint: { "line-color": css("--panel"), "line-width": 1, "line-offset": -2 } });
+      map.on("mousemove", `${lvl}-fill`, (e) => onHover(e, lvl));
+      map.on("mouseleave", `${lvl}-fill`, () => clearHover());
+      map.on("click", `${lvl}-fill`, (e) => { const f = e.features[0]; if (f) select(lvl, f.properties.id, false, "map"); });
+    }
+    mapReady = true;
+    if (state.osm) addOsm();
+    applyLevel(); recolor(); applySelection();
+    map.resize();
+    if (state.sel && byId[state.sel.lvl][state.sel.id]) zoomTo(state.sel.lvl, state.sel.id, true); else map.fitBounds(SWEDEN, { padding: 24, duration: 0 });
+    $("#loading").hidden = true;
+  });
+}
+// ---- OpenStreetMap background ----
+const OSM_TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+let osmFailed = false;
+function fillOpacity() { const hover = ["boolean", ["feature-state", "hover"], false]; return state.osm ? ["case", hover, 0.35, 0.55] : ["case", hover, 0.78, 1]; }
+function osmPaint() { return isDark() ? { "raster-brightness-max": 0.55, "raster-saturation": -0.6, "raster-contrast": 0.1 } : { "raster-brightness-max": 1, "raster-saturation": -0.35, "raster-contrast": 0 }; }
+function addOsm() {
+  if (!map.getSource("osm")) {
+    map.addSource("osm", { type: "raster", tiles: [OSM_TILES], tileSize: 256, maxzoom: 19 });
+    map.addLayer({ id: "osm", type: "raster", source: "osm", paint: osmPaint() }, "lan-fill");
+  }
+  map.setLayoutProperty("osm", "visibility", "visible");
+}
+function setOsm(on) {
+  state.osm = on; osmFailed = false;
+  $("#osmbtn").setAttribute("aria-pressed", on); $("#osmattr").hidden = !on;
+  if (mapReady) {
+    if (on) addOsm(); else if (map.getLayer("osm")) map.setLayoutProperty("osm", "visibility", "none");
+    for (const l of LEVELS) map.setPaintProperty(`${l}-fill`, "fill-opacity", fillOpacity());
+  }
+  renderLegend(); writeHash();
+}
+
+// ---- links: the view is kept in the address (#token.token...) so it can be shared ----
+// Only letters, digits, "." and "-" are used, because the artifact viewer passes nothing else through.
+const ARTIFACT_URL = "https://claude.ai/artifact/UgUpBea8J75cAVnbsd2cA7";
+function encodeHash() {
+  const tk = [state.view, "y" + state.year, state.level, "m-" + state.mode.replace(":", "-"), "p-" + state.party];
+  if (state.sel) tk.push("s-" + state.sel.lvl + "-" + state.sel.id);
+  if (state.view === "list") tk.push("c-" + state.cols);
+  if (state.view === "sim") { tk.push("k-" + state.simKind); if (state.simAvg) tk.push("avg"); if (state.simLeast) tk.push("least"); }
+  if (state.scX !== "inc") tk.push("sx-" + state.scX);
+  if (state.scY !== state.party) tk.push("sy-" + state.scY.replace("_", ""));
+  if (state.osm) tk.push("osm");
+  if (lang === "en") tk.push("en");
+  return tk.join(".");
+}
+function parseHash(h) {
+  const o = {};
+  for (const tk of (h || "").replace(/^#/, "").split(".").filter(Boolean)) {
+    if (["map", "list", "sim"].includes(tk)) o.view = tk;
+    else if (/^y\d{4}$/.test(tk)) o.year = +tk.slice(1);
+    else if (["lan", "kommun", "vd"].includes(tk)) o.level = tk;
+    else if (tk.startsWith("m-")) o.mode = tk.slice(2).replace(/^stat-/, "stat:");
+    else if (tk.startsWith("p-")) o.party = tk.slice(2);
+    else if (tk.startsWith("s-")) { const [, l, id] = tk.split("-"); o.sel = { lvl: l, id }; }
+    else if (tk.startsWith("c-")) o.cols = tk.slice(2);
+    else if (tk.startsWith("k-")) o.simKind = tk.slice(2);
+    else if (tk.startsWith("sx-")) o.scX = tk.slice(3);
+    else if (tk.startsWith("sy-")) o.scY = tk.slice(3) === "turnout" ? "_turnout" : tk.slice(3);
+    else if (tk === "avg") o.simAvg = true;
+    else if (tk === "least") o.simLeast = true;
+    else if (tk === "osm") o.osm = true;
+    else if (tk === "en" || tk === "sv") o.lang = tk;
+  }
+  return o;
+}
+function applyParsed(o) {
+  const P = META.parties.map((p) => p.k).filter((k) => k !== "ÖVR");
+  const modes = ["winner", "share", "change", "bloc", "turnout", "turnoutchg", "simvote", "simdemo", ...META.stats.map((x) => "stat:" + x.k)];
+  if (o.view) state.view = o.view;
+  if (META.years.includes(o.year)) state.year = o.year;
+  if (o.level) state.level = o.level;
+  if (modes.includes(o.mode)) state.mode = o.mode;
+  if (P.includes(o.party)) state.party = o.party;
+  state.scY = state.party;
+  if (["res", "chg", "stat", "sim"].includes(o.cols)) state.cols = o.cols;
+  if (["vote", "demo"].includes(o.simKind)) state.simKind = o.simKind;
+  if (META.stats.some((x) => x.k === o.scX)) state.scX = o.scX; else if (state.mode.startsWith("stat:")) state.scX = state.mode.slice(5);
+  if (o.scY && (P.includes(o.scY) || o.scY === "_turnout")) state.scY = o.scY;
+  state.simAvg = !!o.simAvg; state.simLeast = !!o.simLeast; state.osm = !!o.osm;
+  if (o.lang) lang = o.lang;
+  state.sel = o.sel && ["lan", "kommun", "vd"].includes(o.sel.lvl) && o.sel.id ? o.sel : null;
+}
+let hashTimer = null, lastHash = "";
+function writeHash() {
+  clearTimeout(hashTimer);
+  hashTimer = setTimeout(() => {
+    const h = encodeHash(); if (h === lastHash) return; lastHash = h;
+    try { history.replaceState(null, "", "#" + h); } catch (e) { /* some hosts refuse; the copy button still works */ }
+  }, 150);
+}
+function shareUrl() {
+  let inFrame = false; try { inFrame = window.top !== window.self; } catch (e) { inFrame = true; }
+  const base = inFrame ? ARTIFACT_URL : location.href.split("#")[0];
+  return base + "#" + encodeHash();
+}
+function copyLink() {
+  const url = shareUrl(), label = $("#copylink span");
+  const done = (ok) => { label.textContent = ok ? t("link_copied") : t("link_select"); setTimeout(() => { label.textContent = t("copy_link"); }, 1800); };
+  const fallback = () => { const box = $("#linkbox"); box.hidden = false; box.value = url; box.focus(); box.select(); done(false); };
+  try { navigator.clipboard.writeText(url).then(() => { $("#linkbox").hidden = true; done(true); }, fallback); } catch (e) { fallback(); }
+}
+
+function parentName(level, id) {
+  if (level === "vd") { const r = rec("vd", id) || byId.vd[id]?.properties; const k = r?.k; return k ? META.kommun[k]?.[0] || "" : ""; }
+  if (level === "kommun") { const l = META.kommun[id]?.[1]; return l ? META.lan[l] + (lang === "sv" ? " län" : " county") : ""; }
+  return t("lvl_lan");
+}
+function areaName(level, id) { const r = rec(level, id); if (r) return r.n; if (level === "vd") return byId.vd[id]?.properties.n || id; if (level === "kommun") return META.kommun[id]?.[0] || id; return META.lan[id] || id; }
+function onHover(e, lvl) {
+  if (lvl !== state.level) return;
+  const f = e.features[0]; if (!f) return;
+  const id = f.properties.id;
+  if (hoverId !== id) {
+    if (hoverId != null) map.setFeatureState({ source: state.level, id: hoverId }, { hover: false });
+    hoverId = id; map.setFeatureState({ source: state.level, id }, { hover: true });
+  }
+  map.getCanvas().parentElement.classList.add("pointer");
+  const tip = $("#tip");
+  tip.innerHTML = `${esc(areaName(lvl, id))}<small>${esc(parentName(lvl, id))}</small><b>${esc(fmtMetric(metricValue(lvl, id)))}</b>`;
+  tip.style.left = e.point.x + "px"; tip.style.top = e.point.y + "px"; tip.hidden = false;
+}
+function clearHover() {
+  if (hoverId != null && map) map.setFeatureState({ source: state.level, id: hoverId }, { hover: false });
+  hoverId = null; $("#tip").hidden = true; map && map.getCanvas().parentElement.classList.remove("pointer");
+}
+function applyLevel() {
+  document.querySelectorAll("#level button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.level === state.level));
+  if (!mapReady) return;
+  for (const lvl of LEVELS) map.setLayoutProperty(`${lvl}-fill`, "visibility", lvl === state.level ? "visible" : "none");
+  map.setLayoutProperty("vd-line", "visibility", state.level === "vd" ? "visible" : "none");
+  map.setLayoutProperty("kommun-line", "visibility", state.level === "lan" ? "none" : "visible");
+}
+function recolor() {
+  scale = buildScale();
+  if (mapReady) {
+    const lvl = state.level, nd = css("--nodata");
+    for (const id of Object.keys(byId[lvl])) map.setFeatureState({ source: lvl, id }, { c: scale.color(metricValue(lvl, id)) || nd });
+  }
+  renderLegend();
+}
+function renderLegend() {
+  const el = $("#legend"), s = scale, mode = curMode();
+  let h = `<div class="t">${esc(metricLabel())}</div>`;
+  if (s.type === "cat") {
+    h += `<div class="lg-cats">` + META.parties.filter((p) => s.present.has(p.k)).map((p) => `<span><i style="background:${p.c}"></i>${p.k}</span>`).join("") + `</div><div class="s">${esc(t("largest_lead"))}</div>`;
+  } else if (s.type === "seq" || s.type === "div") {
+    const fm = (v) => s.type === "div" ? sgn(v, Math.abs(v) < 3 ? 1 : 0) : mode.startsWith("stat:") ? fmtStat(mode.slice(5), v).replace(/\s?%/, "") : mode === "simdemo" ? fmt2(v) : fmt1(v);
+    h += `<div class="lg-bins">` + s.colors.map((c, i) => `<div><i style="background:${c}"></i><span>${esc(fm(s.edges[i]))}</span></div>`).join("") + `</div>`;
+    if (s.ends) h += `<div class="lg-ends"><span>${esc(s.ends[0])}</span><span>${esc(s.ends[1])}</span></div>`;
+  }
+  const missing = levelIds().some((id) => metricValue(state.level, id) == null);
+  if (missing) h += `<div class="lg-cats" style="margin-top:6px"><span><i style="background:var(--nodata);box-shadow:inset 0 0 0 1px var(--line-strong)"></i>${esc(t("no_data"))}</span></div>`;
+  const notes = [];
+  if (state.level === "vd" && (mode.startsWith("stat:") || mode === "simdemo")) notes.push(state.year === 2026 ? t("est_note") : t("stats_2026_only"));
+  if ((mode === "change" || mode === "turnoutchg") && state.level === "vd") notes.push(t("nd_changed"));
+  if (mode === "bloc") notes.push(t("bloc_note"));
+  if (state.osm && osmFailed) notes.push(t("osm_failed"));
+  if (notes.length) h += `<div class="s">${notes.map(esc).join(" ")}</div>`;
+  el.innerHTML = h;
+}
+function zoomTo(lvl, id, instant = false) {
+  const f = byId[lvl][id]; if (!f || !mapReady) return;
+  const b = f.bbox, pad = matchMedia("(max-width: 820px)").matches ? 20 : 50;
+  map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: pad, maxZoom: lvl === "vd" ? 13 : 10, duration: instant || matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 700 });
+}
+function applySelection() {
+  if (!mapReady) return;
+  for (const l of LEVELS) { const v = state.sel && state.sel.lvl === l ? state.sel.id : ""; map.setFilter(`${l}-sel`, ["==", ["get", "id"], v]); map.setFilter(`${l}-sel-halo`, ["==", ["get", "id"], v]); }
+}
+let pendingZoom = false;        // selection changed while the map was hidden (list view)
+function select(lvl, id, zoom = true, from = "other") {
+  state.sel = id == null ? null : { lvl, id };
+  applySelection();
+  if (state.sel && state.view === "list") pendingZoom = true;
+  else if (state.sel && (zoom || from !== "map")) zoomTo(lvl, id);
+  renderDetail();
+  if (state.view === "list") markListSel(from !== "list");
+  if (state.view === "sim") markSimSel(from !== "sim");
+  const sc = $(".side-scroll"); if (sc && sc.scrollHeight > sc.clientHeight) sc.scrollTop = 0;
+  writeHash();
+}
+
+// ======================================================================
+// Data loading
+// ======================================================================
+const getJSON = (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(t("err_data", { s: u + " " + r.status })); return r.json(); });
+async function loadYear(y) {
+  if (!RES[y]) RES[y] = await getJSON(`data/results_${y}.json`);
+  if (!VDGEO[y]) {
+    if (y === 2026) VDGEO[y] = topoToFC(GEO26, "vd", "id");
+    else { const topo = await getJSON(`data/geo_vd_${y}.json`); VDGEO[y] = topoToFC(topo, "vd", "id"); }
+  }
+}
+async function loadAllYears() { await Promise.all(META.years.map((y) => RES[y] ? null : getJSON(`data/results_${y}.json`).then((d) => { RES[y] = d; }))); }
+async function setYear(y) {
+  const soft = $("#loading"); soft.classList.add("soft"); $("#loadmsg").textContent = t("loading_year", { y }); soft.hidden = false;
+  try { await loadYear(y); } catch (e) { $("#loadmsg").textContent = e.message; return; }
+  state.year = y;
+  byId.vd = Object.fromEntries(VDGEO[y].features.map((f) => [f.properties.id, f]));
+  if (state.sel && state.sel.lvl === "vd" && !byId.vd[state.sel.id]) state.sel = null;
+  if (mapReady) { clearHover(); map.getSource("vd").setData(VDGEO[y]); applySelection(); }
+  soft.hidden = true; soft.classList.remove("soft");
+  document.querySelectorAll("#year button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.y === y));
+  buildSearchIndex(); refreshAll();
+}
+
+// ======================================================================
+// Detail panel
+// ======================================================================
+function parentsOf(lvl, id) {
+  const out = [];
+  if (lvl === "vd") { const k = (rec("vd", id) || byId.vd[id]?.properties)?.k; if (k) { const l = META.kommun[k][1]; out.push(["lan", l, META.lan[l]], ["kommun", k, META.kommun[k][0]]); } }
+  if (lvl === "kommun") { const l = META.kommun[id][1]; out.push(["lan", l, META.lan[l]]); }
+  return out;
+}
+function rankOf(fn, level, id) {
+  const vals = levelIds(level).map((i) => [i, fn(level, i)]).filter((x) => x[1] != null).sort((a, b) => a[1] - b[1]);
+  const r = vals.findIndex((x) => x[0] === id); return r < 0 ? null : { r: r + 1, n: vals.length };
+}
+function renderDetail() {
+  const el = $("#detail");
+  const lvl = state.sel ? state.sel.lvl : "riket", id = state.sel ? state.sel.id : null;
+  const r = rec(lvl, id), y = state.year, py = prevYear();
+  const kind = t("lvl_" + lvl);
+  const crumbs = lvl === "riket" ? "" : `<nav class="crumbs"><button type="button" data-sel="riket">${esc(t("sweden"))}</button>` +
+    parentsOf(lvl, id).map(([l, i, n]) => ` › <button type="button" data-sel="${l}:${i}">${esc(n)}</button>`).join("") + `</nav>`;
+  let body = "";
+  if (!r) {
+    body = `<p class="note">${esc(t("no_data"))}</p>`;
+  } else {
+    const to = turnout(r), top = prevTurnout(r);
+    body += `<div class="kpis">
+      <div class="kpi"><b>${pct(to)}</b><span>${esc(t("turnout"))}</span>${top != null ? `<div class="delta">${sgn(to - top)} ${t("pp")} ${esc(t("vs", { p: py }))}</div>` : ""}</div>
+      <div class="kpi"><b>${fmtInt(r.e)}</b><span>${esc(t("eligible"))}</span>${r.ep ? `<div class="delta">${sgn(100 * (r.e - r.ep) / r.ep)} % ${esc(t("vs", { p: py }))}</div>` : ""}</div>
+      <div class="kpi"><b>${fmtInt(r.t)}</b><span>${esc(t("votes_cast"))}</span><div class="delta">${fmtInt(r.b)} ${esc(t("blank"))}</div></div></div>`;
+    const maxShare = Math.max(...META.parties.map((p) => Math.max(share(r, p.k) || 0, prevShare(r, p.k) || 0)), 1);
+    const rows = META.parties.map((p) => {
+      const s = share(r, p.k), ps = prevShare(r, p.k);
+      return `<div class="prow" title="${esc(p.n)}"><span class="pk">${p.k}</span>
+        <div class="bar"><div class="fill" style="width:${(100 * (s || 0) / maxShare).toFixed(2)}%;background:${p.c}"></div>${ps != null ? `<div class="prev" style="left:calc(${(100 * ps / maxShare).toFixed(2)}% - 1px)"></div>` : ""}</div>
+        <span class="v">${pct(s)}</span><span class="d">${ps != null ? sgn(s - ps) : ""}</span></div>`;
+    }).join("");
+    const gl = GOV.reduce((a, k) => a + share(r, k), 0), ol = OPP.reduce((a, k) => a + share(r, k), 0);
+    const bloc = `<div class="bloc"><div class="blocbar" aria-hidden="true"><div style="flex:${gl};background:#3d78c4"></div><div style="flex:${ol};background:#c33b2e"></div><div style="flex:${Math.max(0, 100 - gl - ol)};background:var(--line-strong)"></div></div>
+      <div style="display:flex;justify-content:space-between;gap:8px"><span>M+KD+L+SD <b class="num">${pct(gl)}</b></span><span>S+V+MP+C <b class="num">${pct(ol)}</b></span></div></div>`;
+    const prevNote = r.pp ? t("bars_note", { y, p: py }) : !py ? t("no_prev") : lvl === "vd" ? t("no_prev_vd", { p: py }) : "";
+    body += `<div><h3 class="sec">${esc(t("vote_share", { y }))} <span>${esc(prevNote)}</span></h3>${rows}${bloc}</div>`;
+  }
+  // similarity
+  if (lvl !== "riket") {
+    const sv = r ? dissim(r, R().riket) : null, sd = simDemo(lvl, id);
+    const rv = sv != null ? rankOf((l, i) => dissim(rec(l, i), R().riket), lvl, id) : null, rd = sd != null ? rankOf((l, i) => simDemo(l, i), lvl, id) : null;
+    body += `<div><h3 class="sec">${esc(t("sim_head"))} <span><button type="button" class="linkbtn" id="gosim">${esc(t("view_sim"))} →</button></span></h3><div class="simcards">
+      <div class="simcard"><span>${esc(t("sim_vote_lbl"))} ${y}</span><b>${sv == null ? "–" : fmt1(sv) + (lang === "sv" ? " %" : "%")}</b><span>${rv ? esc(t("rank_of", { r: fmtInt(rv.r), n: fmtInt(rv.n) })) : ""}</span></div>
+      <div class="simcard"><span>${esc(t("sim_demo_lbl"))}</span><b>${sd == null ? "–" : fmt2(sd)}</b><span>${rd ? esc(t("rank_of", { r: fmtInt(rd.r), n: fmtInt(rd.n) })) : ""}</span></div></div></div>`;
+  }
+  if (lvl === "kommun") body += `<div><button type="button" class="btn primary" id="drill">${esc(t("drill_vd", { n: areaName(lvl, id) }))}</button></div>`;
+  if (lvl === "lan") body += `<div><button type="button" class="btn" id="drill">${esc(t("drill_k", { n: areaName(lvl, id) }))}</button></div>`;
+  // statistics
+  const S = statsOf(lvl, id);
+  if (S) {
+    const statsRows = META.stats.map((d) => {
+      const v = S[d.k], rv = ST.riket[d.k], on = curMode() === "stat:" + d.k ? " class=\"on\"" : "";
+      return `<tr${on}><td><button type="button" data-stat="${d.k}">${esc(statName(d))}${statUnit(d) && statUnit(d) !== "%" ? ` <span class="note">${esc(statUnit(d))}</span>` : ""}</button></td>
+        <td class="v">${lvl === "vd" && v != null ? "≈ " : ""}${fmtStat(d.k, v)}</td>${lvl === "riket" ? "" : `<td class="r">${fmtStat(d.k, rv)}</td>`}</tr>`;
+    }).join("");
+    body += `<div><h3 class="sec">${esc(t("stats"))} <span>${lvl === "riket" ? "" : esc(t("right_sweden"))}</span></h3><table class="stats"><tbody>${statsRows}</tbody></table>
+      ${lvl === "vd" ? `<p class="note" style="margin-top:8px">${esc(t("est_long"))}</p>` : ""}</div>`;
+  } else if (lvl === "vd") {
+    body += `<p class="note">${esc(t("stats_2026_only"))}</p>`;
+  }
+  // scatter
+  body += `<div><h3 class="sec">${esc(t("compare_all", { pl: t("plural_" + state.level) }))}</h3>
+    <div class="scatter-ctl">
+      <select id="scY" aria-label="${esc(t("y_axis"))}">${META.parties.filter((p) => p.k !== "ÖVR").map((p) => `<option value="${p.k}" ${p.k === state.scY ? "selected" : ""}>${esc(t("share_axis", { k: p.k }))}</option>`).join("")}<option value="_turnout" ${state.scY === "_turnout" ? "selected" : ""}>${esc(t("turnout"))}</option></select>
+      <select id="scX" aria-label="${esc(t("x_axis"))}">${META.stats.map((d) => `<option value="${d.k}" ${d.k === state.scX ? "selected" : ""}>${esc(statName(d))}</option>`).join("")}</select>
+    </div><canvas id="scatter"></canvas><p class="note" id="scnote"></p></div>`;
+  body += `<div class="about"><p><b>${esc(t("sources"))}.</b> ${t("src_text")}</p><p>${esc(t("src_note"))}</p></div>`;
+
+  el.innerHTML = `<div>${crumbs}<div class="area-kind">${esc(kind)}${lvl === "kommun" ? " · " + esc(t("n_vd", { n: Object.values(byId.vd).filter((f) => f.properties.k === id).length })) : ""}</div><h2 class="area-name">${esc(lvl === "riket" ? t("sweden") : areaName(lvl, id))}</h2></div>${body}`;
+  el.querySelectorAll("[data-sel]").forEach((b) => b.addEventListener("click", () => {
+    const v = b.dataset.sel; if (v === "riket") { select(null, null, false); mapReady && map.fitBounds(SWEDEN, { padding: 24 }); return; }
+    const [l, i] = v.split(":"); if (state.level !== l) setLevel(l); select(l, i);
+  }));
+  el.querySelectorAll("[data-stat]").forEach((b) => b.addEventListener("click", () => { if (state.view === "sim") setView("map"); setMode("stat:" + b.dataset.stat); }));
+  const dr = $("#drill"); if (dr) dr.addEventListener("click", () => { setLevel(lvl === "kommun" ? "vd" : "kommun"); zoomTo(lvl, id); });
+  const gs = $("#gosim"); if (gs) gs.addEventListener("click", () => setView("sim"));
+  $("#scX").addEventListener("change", (e) => { state.scX = e.target.value; drawScatter(); });
+  $("#scY").addEventListener("change", (e) => { state.scY = e.target.value; drawScatter(); });
+  drawScatter();
+}
+
+// ======================================================================
+// Scatter
+// ======================================================================
+let scPts = [];
+function drawScatter() {
+  const cv = $("#scatter"); if (!cv) return;
+  const W = cv.clientWidth, H = cv.clientHeight, dpr = window.devicePixelRatio || 1;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const g = cv.getContext("2d"); g.scale(dpr, dpr); g.clearRect(0, 0, W, H);
+  const lvl = state.level;
+  const yOf = (r) => state.scY === "_turnout" ? turnout(r) : share(r, state.scY);
+  const pts = levelIds(lvl).map((id) => { const s = statsOf(lvl, id), r = rec(lvl, id); return { id, x: s ? s[state.scX] : null, y: yOf(r) }; }).filter((p) => p.x != null && p.y != null && isFinite(p.x));
+  scPts = [];
+  if (pts.length < 3) { $("#scnote").textContent = lvl === "vd" && state.year !== 2026 ? t("scatter_none_old") : t("scatter_none"); return; }
+  const logX = state.scX === "dens" || state.scX === "pop";
+  const tx = (v) => logX ? Math.log10(Math.max(v, 0.1)) : v;
+  const xs = pts.map((p) => tx(p.x)).sort((a, b) => a - b), ys = pts.map((p) => p.y).sort((a, b) => a - b);
+  const x0 = quantile(xs, .005), x1 = quantile(xs, .995), y0 = Math.max(0, quantile(ys, .002) - 1), y1 = quantile(ys, .998) + 1;
+  const L = 38, Rr = 8, Tp = 8, B = 26;
+  const px = (v) => L + (tx(v) - x0) / (x1 - x0 || 1) * (W - L - Rr), py = (v) => Tp + (1 - (v - y0) / (y1 - y0 || 1)) * (H - Tp - B);
+  g.font = "10.5px " + css("--font-mono"); g.fillStyle = css("--ink-3"); g.strokeStyle = css("--line"); g.lineWidth = 1;
+  const ystep = (y1 - y0) > 40 ? 10 : (y1 - y0) > 15 ? 5 : 2;
+  for (let v = Math.ceil(y0 / ystep) * ystep; v <= y1; v += ystep) { const yy = Math.round(py(v)) + .5; g.beginPath(); g.moveTo(L, yy); g.lineTo(W - Rr, yy); g.stroke(); g.textAlign = "right"; g.textBaseline = "middle"; g.fillText(v + "%", L - 5, yy); }
+  g.textAlign = "center"; g.textBaseline = "top";
+  const xt = logX ? [0.1, 1, 10, 100, 1000, 10000, 1e5, 1e6].filter((v) => tx(v) >= x0 && tx(v) <= x1) : niceTicks(x0, x1, 5);
+  xt.forEach((v) => g.fillText(logX ? (v >= 1000 ? v / 1000 + "k" : v) : fmtTick(v), px(v), H - B + 6));
+  let color = state.scY === "_turnout" ? css("--accent") : META.parties[PI[state.scY]].c;
+  if (!isDark() && ["SD", "MP", "M"].includes(state.scY)) color = mix(color, "#000000", .3);
+  const rad = lvl === "vd" ? 1.6 : lvl === "kommun" ? 2.6 : 4;
+  // what is selected: the area itself (same level) or, for a higher-level selection, its sub-areas
+  const S = state.sel;
+  const sel = S && S.lvl === lvl ? pts.find((p) => p.id === S.id) : null;
+  let inGroup = null;
+  if (S && S.lvl === "kommun" && lvl === "vd") inGroup = (id) => (rec("vd", id) || byId.vd[id]?.properties)?.k === S.id;
+  if (S && S.lvl === "lan" && lvl === "kommun") inGroup = (id) => META.kommun[id]?.[1] === S.id;
+  if (S && S.lvl === "lan" && lvl === "vd") inGroup = (id) => META.kommun[(rec("vd", id) || byId.vd[id]?.properties)?.k]?.[1] === S.id;
+  const focus = !!(sel || inGroup);
+  const clampX = (x) => Math.max(L, Math.min(W - Rr, x)), clampY = (y) => Math.max(Tp, Math.min(H - B, y));
+  // background dots: muted when something is selected
+  g.fillStyle = focus ? css("--ink-3") : color;
+  g.globalAlpha = focus ? (lvl === "vd" ? .14 : .22) : (lvl === "vd" ? .35 : .6);
+  const group = [];
+  for (const p of pts) {
+    const x = px(p.x), yy = py(p.y); if (x < L - 2 || x > W || yy < 0 || yy > H - B + 2) continue;
+    scPts.push({ x, y: yy, id: p.id });
+    if (inGroup && inGroup(p.id)) { group.push([x, yy]); continue; }
+    g.beginPath(); g.arc(x, yy, rad, 0, 7); g.fill();
+  }
+  // sub-areas of the selected municipality/county in full colour
+  g.globalAlpha = .9; g.fillStyle = color;
+  for (const [x, yy] of group) { g.beginPath(); g.arc(x, yy, rad + 1, 0, 7); g.fill(); }
+  g.globalAlpha = 1;
+  // Sweden as a reference point
+  const nat = R().riket, ny = state.scY === "_turnout" ? turnout(nat) : share(nat, state.scY), nx = ST.riket[state.scX];
+  if (nx != null && ny != null && state.scX !== "dens" && state.scX !== "pop") {
+    const x = clampX(px(nx)), yy = clampY(py(ny));
+    g.strokeStyle = css("--ink-2"); g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(x - 5, yy); g.lineTo(x + 5, yy); g.moveTo(x, yy - 5); g.lineTo(x, yy + 5); g.stroke();
+    g.font = "600 10.5px " + css("--font-body"); g.fillStyle = css("--ink-2"); g.textAlign = "left"; g.textBaseline = "bottom";
+    const sx = sel ? clampX(px(sel.x)) : -999, sy = sel ? clampY(py(sel.y)) : -999;
+    if (Math.hypot(sx - x, sy - yy) > 70) g.fillText(t("sweden"), x + 4, yy - 3);
+  }
+  if (sel) {
+    const x = clampX(px(sel.x)), yy = clampY(py(sel.y)), ink = css("--ink"), panel = css("--panel");
+    // crosshair to the axes
+    g.setLineDash([3, 3]); g.strokeStyle = ink; g.globalAlpha = .55; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(L, Math.round(yy) + .5); g.lineTo(x, Math.round(yy) + .5); g.moveTo(Math.round(x) + .5, yy); g.lineTo(Math.round(x) + .5, H - B); g.stroke();
+    g.setLineDash([]); g.globalAlpha = 1;
+    // axis value tags
+    const tag = (txt, cx, cy, align) => { g.font = "500 10.5px " + css("--font-mono"); const w = g.measureText(txt).width + 8, h = 15;
+      let bx = align === "left" ? cx - w : cx - w / 2; bx = Math.max(0, Math.min(W - w, bx));
+      g.fillStyle = ink; g.beginPath(); g.roundRect ? g.roundRect(bx, cy - h / 2, w, h, 3) : g.rect(bx, cy - h / 2, w, h); g.fill();
+      g.fillStyle = panel; g.textAlign = "left"; g.textBaseline = "middle"; g.fillText(txt, bx + 4, cy + .5); };
+    tag(fmt1(sel.y) + "%", L - 2, yy, "left");
+    tag(fmtStat(state.scX, sel.x), x, H - B + 9, "center");
+    // the dot: halo, fill, ring
+    g.beginPath(); g.arc(x, yy, 9, 0, 7); g.fillStyle = panel; g.globalAlpha = .85; g.fill(); g.globalAlpha = 1;
+    g.beginPath(); g.arc(x, yy, 6.5, 0, 7); g.fillStyle = color; g.fill(); g.lineWidth = 2.5; g.strokeStyle = ink; g.stroke();
+    // name label with a background so it stays readable over the dots
+    const name = areaName(lvl, sel.id);
+    g.font = "600 12px " + css("--font-body");
+    const tw = g.measureText(name).width, right = x + 12 + tw + 8 < W;
+    const lx = right ? x + 12 : x - 12 - tw - 8, ly = Math.max(Tp + 9, yy - 14);
+    g.fillStyle = panel; g.globalAlpha = .92; g.beginPath(); g.roundRect ? g.roundRect(lx, ly - 9, tw + 8, 18, 4) : g.rect(lx, ly - 9, tw + 8, 18); g.fill(); g.globalAlpha = 1;
+    g.fillStyle = ink; g.textAlign = "left"; g.textBaseline = "middle"; g.fillText(name, lx + 4, ly + .5);
+  }
+  const r = pearson(pts.map((p) => tx(p.x)), pts.map((p) => p.y)), d = statDef(state.scX);
+  $("#scnote").textContent = t("scatter_note", { n: fmtInt(pts.length), pl: t("plural_" + lvl), x: statName(d) + (statUnit(d) ? " (" + statUnit(d) + ")" : ""), log: logX ? t("log") : "", r: fmt2(r), sel: sel ? t("ring") : inGroup ? t("ring_group", { n: areaName(S.lvl, S.id) }) : S && S.lvl === lvl ? t("sel_missing", { n: areaName(lvl, S.id) }) : "" });
+}
+function niceTicks(a, b, n) { const span = b - a, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0))), f = step0 / mag; const step = (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * mag; const out = []; for (let v = Math.ceil(a / step) * step; v <= b + 1e-9; v += step) out.push(+v.toFixed(6)); return out; }
+function fmtTick(v) { return Math.abs(v) >= 1000 ? (v / 1000) + "k" : String(+v.toFixed(1)); }
+function pearson(x, y) { const n = x.length; let mx = 0, my = 0; for (let i = 0; i < n; i++) { mx += x[i]; my += y[i]; } mx /= n; my /= n; let sxy = 0, sxx = 0, syy = 0; for (let i = 0; i < n; i++) { const a = x[i] - mx, b = y[i] - my; sxy += a * b; sxx += a * a; syy += b * b; } return sxy / Math.sqrt(sxx * syy || 1); }
+
+// ======================================================================
+// List view
+// ======================================================================
+function listColumns() {
+  const L = state.level, P = META.parties, py = prevYear();
+  const name = { key: "name", label: t("c_name"), cls: "l", get: (id) => areaName(L, id), sortStr: true };
+  const parent = L === "lan" ? [] : [{ key: "parent", label: L === "vd" ? t("c_parent_vd") : t("c_parent_k"), cls: "l", get: (id) => parentName(L, id).replace(/ (län|county)$/, ""), sortStr: true }];
+  const cols = [name, ...parent];
+  if (state.cols === "res") {
+    cols.push({ key: "e", label: t("c_elig"), get: (id) => rec(L, id)?.e, fmt: fmtInt });
+    cols.push({ key: "turn", label: t("c_turn"), get: (id) => turnout(rec(L, id)), fmt: fmt1 });
+    for (const p of P) cols.push({ key: "p" + p.k, label: p.k, dot: p.c, get: (id) => share(rec(L, id), p.k), fmt: fmt1, bar: p.c });
+    cols.push({ key: "win", label: t("c_win"), get: (id) => winner(rec(L, id))?.k ?? null, sortStr: true, fmt: (v) => v });
+  } else if (state.cols === "chg") {
+    const d = (a, b) => a == null || b == null ? null : a - b;
+    cols.push({ key: "turnc", label: t("c_turnchg"), get: (id) => { const r = rec(L, id); return d(turnout(r), prevTurnout(r)); }, fmt: (v) => sgn(v) });
+    for (const p of P) cols.push({ key: "c" + p.k, label: p.k + " ±", dot: p.c, get: (id) => { const r = rec(L, id); return d(share(r, p.k), prevShare(r, p.k)); }, fmt: (v) => sgn(v) });
+  } else if (state.cols === "stat") {
+    for (const s of META.stats) cols.push({ key: "s" + s.k, label: statName(s), title: statName(s), get: (id) => statsOf(L, id)?.[s.k] ?? null, fmt: (v) => fmtStat(s.k, v) });
+  } else {
+    cols.push({ key: "sv", label: t("c_simvote") + " " + state.year, get: (id) => dissim(rec(L, id), R().riket), fmt: fmt1 });
+    if (L !== "vd" && META.years.every((y) => RES[y])) cols.push({ key: "sva", label: t("c_simvote_avg"), get: (id) => { let s = 0, n = 0; for (const y of META.years) { const v = dissim(RES[y][L][id], RES[y].riket); if (v != null) { s += v; n++; } } return n ? s / n : null; }, fmt: fmt1 });
+    cols.push({ key: "sd", label: t("c_simdemo"), get: (id) => simDemo(L, id), fmt: fmt2 });
+  }
+  return cols;
+}
+function renderList() {
+  const cols = listColumns(), L = state.level;
+  if (!cols.find((c) => c.key === state.sort.key)) state.sort = { key: "name", dir: 1 };
+  const f = state.lfilter.trim().toLocaleLowerCase("sv");
+  let ids = levelIds(L);
+  if (f) ids = ids.filter((id) => (areaName(L, id) + " " + parentName(L, id)).toLocaleLowerCase("sv").includes(f));
+  const sc = cols.find((c) => c.key === state.sort.key), dir = state.sort.dir;
+  const vals = new Map(ids.map((id) => [id, sc.get(id)]));
+  const coll = new Intl.Collator("sv", { numeric: true });
+  ids.sort((a, b) => { const x = vals.get(a), y = vals.get(b); if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (sc.sortStr ? coll.compare(x, y) : x - y) * dir; });
+  const total = ids.length, selIdx = state.sel && state.sel.lvl === L ? ids.indexOf(state.sel.id) : -1;
+  const shown = ids.slice(0, Math.max(state.llimit, selIdx + 20));
+  // bar scale for party columns
+  const maxBar = {};
+  for (const c of cols) if (c.bar) maxBar[c.key] = Math.max(1, ...shown.map((id) => c.get(id) || 0));
+  $("#ltable thead").innerHTML = `<tr><th class="l" scope="col"><span class="note" style="padding:0 8px">#</span></th>` + cols.map((c) =>
+    `<th scope="col" class="${c.cls || ""}" ${state.sort.key === c.key ? `aria-sort="${dir > 0 ? "ascending" : "descending"}"` : ""} ${c.title ? `title="${esc(c.title)}"` : ""}><button type="button" data-sort="${c.key}">${c.dot ? `<i class="dot" style="background:${c.dot}"></i>` : ""}${esc(c.label.length > 22 ? c.label.slice(0, 20) + "…" : c.label)}${state.sort.key === c.key ? (dir > 0 ? " ▲" : " ▼") : ""}</button></th>`).join("") + `</tr>`;
+  const selId = state.sel && state.sel.lvl === L ? state.sel.id : null;
+  $("#ltable tbody").innerHTML = shown.map((id, i) => `<tr data-id="${esc(id)}"${id === selId ? ' class="sel"' : ""}><td class="rk">${i + 1}</td>` + cols.map((c) => {
+    const v = c.key === "name" || c.key === "parent" ? null : c.get(id);
+    if (c.key === "name") return `<td class="l"><b>${esc(areaName(L, id))}</b></td>`;
+    if (c.key === "parent") return `<td class="l"><small>${esc(c.get(id))}</small></td>`;
+    if (c.bar && v != null) return `<td class="cellbar" style="--w:${(34 * v / maxBar[c.key]).toFixed(1)}px;--c:${c.bar}">${esc(c.fmt(v))}</td>`;
+    return `<td>${v == null ? "–" : esc(c.fmt(v))}</td>`;
+  }).join("") + `</tr>`).join("");
+  $("#lcount").textContent = t("count", { a: fmtInt(shown.length), b: fmtInt(total) });
+  $("#listpane").style.setProperty("--lbh", $(".listbar").offsetHeight + "px");
+  $("#lmore").hidden = total <= state.llimit;
+  $("#lmorebtn").textContent = t("show_all", { n: fmtInt(total) });
+  document.querySelectorAll("#lcols button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.cols === state.cols));
+}
+function markListSel(scroll = false) {
+  const id = state.sel && state.sel.lvl === state.level ? state.sel.id : null;
+  let row = null;
+  document.querySelectorAll("#ltable tbody tr").forEach((tr) => { const on = tr.dataset.id === id; tr.classList.toggle("sel", on); if (on) row = tr; });
+  if (id && !row) { renderList(); row = document.querySelector("#ltable tbody tr.sel"); }
+  if (scroll && row) scrollIntoPane(row, $("#listpane"), $("#listpane").style.getPropertyValue("--lbh") ? parseInt($("#listpane").style.getPropertyValue("--lbh")) + 40 : 100);
+}
+function scrollIntoPane(el, pane, topPad) {
+  const pr = pane.getBoundingClientRect(), r = el.getBoundingClientRect();
+  if (r.top < pr.top + topPad || r.bottom > pr.bottom - 10) pane.scrollTop += r.top - pr.top - Math.max(topPad, (pr.height - r.height) / 2);
+}
+
+// ======================================================================
+// Similarity view
+// ======================================================================
+function renderSim() {
+  const el = $("#simpane"), L = state.level, kind = state.simKind, y = state.year;
+  const avg = state.simAvg && kind === "vote" && L !== "vd";
+  const least = state.simLeast;
+  const title = kind === "vote" ? (avg ? t(least ? "sim_title_vote_avg_least" : "sim_title_vote_avg") : t(least ? "sim_title_vote_least" : "sim_title_vote", { y })) : t(least ? "sim_title_demo_least" : "sim_title_demo");
+  const method = (kind === "vote" ? T[lang].method_vote : T[lang].method_demo).map((p) => `<p>${p}</p>`).join("");
+  const nat = R().riket;
+  const natbar = kind === "vote" && !avg ? `<div><div class="note" style="margin-bottom:4px">${esc(t("sweden_result", { y }))}</div><div class="natbar">${META.parties.map((p) => `<div title="${p.k} ${pct(share(nat, p.k))}" style="flex:${share(nat, p.k)};background:${p.c}"></div>`).join("")}</div>
+    <div class="natlegend" style="margin-top:4px">${META.parties.map((p) => `<span><i style="background:${p.c}"></i>${p.k} ${fmt1(share(nat, p.k))}</span>`).join("")}</div></div>` : "";
+  let head = `<div class="simhead"><h2>${esc(title)}</h2>
+    <div class="opts"><div class="seg" role="group" id="simkind"><button type="button" data-k="vote" aria-pressed="${kind === "vote"}">${esc(t("sim_vote"))}</button><button type="button" data-k="demo" aria-pressed="${kind === "demo"}">${esc(t("sim_demo"))}</button></div>
+    <div class="seg" role="group" id="simord"><button type="button" data-o="0" aria-pressed="${!least}">${esc(t("most_like"))}</button><button type="button" data-o="1" aria-pressed="${least}">${esc(t("least_like"))}</button></div>
+    ${kind === "vote" && L !== "vd" ? `<label class="chk"><input type="checkbox" id="simavg" ${state.simAvg ? "checked" : ""}> ${esc(t("avg_all"))}</label>` : ""}</div>
+    ${natbar}
+    <details class="method"><summary>${esc(t("method"))}</summary>${method}</details></div>`;
+  if (kind === "demo" && L === "vd" && y !== 2026) { el.innerHTML = head + `<p class="simempty">${esc(t("sim_demo_vd_old"))}</p>`; bindSim(); return; }
+  const fn = kind === "vote" ? (id) => simVote(L, id) : (id) => simDemo(L, id);
+  const rows = levelIds(L).map((id) => [id, fn(id)]).filter((x) => x[1] != null).sort((a, b) => least ? b[1] - a[1] : a[1] - b[1]);
+  const selId = state.sel && state.sel.lvl === L ? state.sel.id : null, selRank = selId ? rows.findIndex((x) => x[0] === selId) : -1;
+  const shown = rows.slice(0, Math.max(state.simLimit, selRank + 10));
+  const items = shown.map(([id, v], i) => {
+    let extra = "";
+    if (kind === "vote") {
+      const r = avg ? null : rec(L, id);
+      if (r) {
+        const top = META.parties.map((p) => ({ k: p.k, d: share(r, p.k) - share(nat, p.k) })).sort((a, b) => Math.abs(b.d) - Math.abs(a.d)).slice(0, 3);
+        extra = `<svg class="devs" viewBox="0 0 270 26" preserveAspectRatio="none" aria-hidden="true">${devBars(r, nat)}</svg><div class="why">${top.map((x) => `<span>${x.k} ${sgn(x.d)} ${t("pp")}</span>`).join("")}</div>`;
+      }
+    } else {
+      const d = simDemo(L, id, true);
+      extra = `<div class="why">${d.devs.slice(0, 3).map((x) => { const def = statDef(x.k); return `<span>${x.z > 0 ? "↑" : "↓"} ${esc(statName(def))} ${esc(fmtStat(x.k, x.v))}</span>`; }).join("")}</div>`;
+    }
+    const sc = kind === "vote" ? fmt1(v) + (lang === "sv" ? " %" : "%") : fmt2(v);
+    return `<li data-id="${esc(id)}"${id === selId ? ' class="sel"' : ""}><span class="no">${least ? rows.length - i : i + 1}</span><span class="nm"><b>${esc(areaName(L, id))}</b><small>${esc(parentName(L, id))}</small></span><span class="sc">${sc}<small>${esc(kind === "vote" ? t("sim_vote_lbl") : t("sim_demo_lbl"))}</small></span>${extra}</li>`;
+  }).join("");
+  el.innerHTML = head + `<ol class="rank">${items}</ol>` + (rows.length > shown.length ? `<div class="more"><button type="button" class="btn" id="simmore">${esc(t("show_more"))}</button></div>` : "");
+  bindSim();
+}
+function devBars(r, nat) {
+  // one small bar per party: area share minus Sweden's share, ±10 pp full height
+  const n = META.parties.length, w = 270 / n;
+  let s = `<line x1="0" x2="270" y1="13" y2="13" stroke="currentColor" stroke-opacity=".25" stroke-width="1"/>`;
+  META.parties.forEach((p, i) => {
+    const d = share(r, p.k) - share(nat, p.k), h = Math.min(12, Math.abs(d) * 2.5);
+    const x = i * w + w * .2, bw = w * .6;
+    s += `<rect x="${x.toFixed(1)}" width="${bw.toFixed(1)}" y="${(d > 0 ? 13 - h : 13).toFixed(1)}" height="${Math.max(h, .6).toFixed(1)}" fill="${p.c}"><title>${p.k} ${sgn(d)} ${t("pp")}</title></rect>`;
+  });
+  return s;
+}
+function bindSim() {
+  const el = $("#simpane");
+  el.querySelectorAll("#simkind button").forEach((b) => b.addEventListener("click", () => { state.simKind = b.dataset.k; state.simLimit = 50; refreshView(); }));
+  el.querySelectorAll("#simord button").forEach((b) => b.addEventListener("click", () => { state.simLeast = b.dataset.o === "1"; state.simLimit = 50; refreshView(); }));
+  const av = $("#simavg"); if (av) av.addEventListener("change", async (e) => { state.simAvg = e.target.checked; if (state.simAvg) await loadAllYears(); refreshView(); });
+  const mo = $("#simmore"); if (mo) mo.addEventListener("click", () => { state.simLimit += 100; renderSim(); });
+  el.querySelector("ol.rank")?.addEventListener("click", (e) => { const li = e.target.closest("li[data-id]"); if (li) select(state.level, li.dataset.id, true, "sim"); });
+}
+function markSimSel(scroll = false) {
+  const id = state.sel && state.sel.lvl === state.level ? state.sel.id : null;
+  let item = null;
+  document.querySelectorAll("ol.rank li").forEach((li) => { const on = li.dataset.id === id; li.classList.toggle("sel", on); if (on) item = li; });
+  if (id && !item) { renderSim(); item = document.querySelector("ol.rank li.sel"); }
+  if (scroll && item) scrollIntoPane(item, $("#simpane"), 20);
+}
+
+// ======================================================================
+// Controls
+// ======================================================================
+function modeOptions() {
+  const py = prevYear() ?? "–";
+  const res = [["winner", t("m_winner")], ["share", t("m_share")], ["change", t("m_change", { p: py })], ["bloc", t("m_bloc")], ["turnout", t("m_turnout")], ["turnoutchg", t("m_turnoutchg", { p: py })]];
+  const sim = [["simvote", t("m_simvote")], ["simdemo", t("m_simdemo")]];
+  $("#mode").innerHTML = `<optgroup label="${esc(t("grp_result"))}">${res.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join("")}</optgroup>` +
+    `<optgroup label="${esc(t("grp_sim"))}">${sim.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join("")}</optgroup>` +
+    `<optgroup label="${esc(t("grp_stats"))}">${META.stats.map((s) => `<option value="stat:${s.k}">${esc(statName(s))}</option>`).join("")}</optgroup>`;
+  $("#mode").value = state.mode;
+}
+function setMode(m) {
+  state.mode = m; $("#mode").value = m;
+  $("#party-ctl").hidden = !["share", "change"].includes(m);
+  if (m.startsWith("stat:")) state.scX = m.slice(5);
+  if (["share", "change"].includes(m)) state.scY = state.party;
+  refreshAll();
+}
+function setLevel(lvl) { if (hoverId != null) clearHover(); state.level = lvl; applyLevel(); state.llimit = 300; state.simLimit = 50; refreshAll(); }
+function setView(v) {
+  state.view = v;
+  document.querySelectorAll("#tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.view === v));
+  const views = $("#views");
+  views.classList.toggle("sim", v === "sim"); views.classList.toggle("list", v === "list");
+  $("#simpane").hidden = v !== "sim"; $("#listpane").hidden = v !== "list"; $("#mapwrap").hidden = v === "list";
+  $("#mode-ctl").hidden = v === "sim";
+  $("#party-ctl").hidden = v === "sim" || !["share", "change"].includes(state.mode);
+  if (mapReady && v !== "list") requestAnimationFrame(() => {
+    map.resize();
+    if (pendingZoom && state.sel && byId[state.sel.lvl][state.sel.id]) zoomTo(state.sel.lvl, state.sel.id);
+    pendingZoom = false;
+  });
+  refreshAll();
+  if (v === "list") markListSel(true);
+  if (v === "sim") markSimSel(true);
+}
+function refreshView() {
+  writeHash();
+  recolor();
+  if (state.view === "list") renderList();
+  if (state.view === "sim") renderSim();
+}
+function refreshAll() {
+  modeOptions();
+  $("#ctx").textContent = t("ctx", { lvl: t("lvl_" + state.level + "_p"), y: state.year });
+  refreshView(); renderDetail();
+}
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach((e) => { e.textContent = t(e.dataset.t); });
+  document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.lang === lang));
+  $("#subtitle").textContent = t("subtitle");
+  $("#q").placeholder = t("search_ph"); $("#q").setAttribute("aria-label", t("search_ph"));
+  $("#lfilter").placeholder = t("filter_ph"); $("#lfilter").setAttribute("aria-label", t("filter_ph"));
+  $("#zin").setAttribute("aria-label", t("zoom_in")); $("#zout").setAttribute("aria-label", t("zoom_out")); $("#zall").setAttribute("aria-label", t("zoom_all")); $("#zall").title = t("zoom_all");
+  $("#map").setAttribute("aria-label", t("map_label"));
+  $("#osmbtn").title = t("osm_title");
+  $("#parties").setAttribute("aria-label", t("party"));
+  $("#year").innerHTML = META.years.slice().reverse().map((y) => `<button type="button" data-y="${y}" aria-pressed="${y === state.year}">${y}</button>`).join("");
+  modeOptions(); buildSearchIndex();
+}
+function initControls() {
+  $("#parties").innerHTML = META.parties.filter((p) => p.k !== "ÖVR").map((p) => `<button type="button" class="chip" data-p="${p.k}" aria-pressed="${p.k === state.party}" title="${esc(p.n)}"><i style="background:${p.c}"></i>${p.k}</button>`).join("");
+  $("#parties").addEventListener("click", (e) => { const b = e.target.closest("[data-p]"); if (!b) return; state.party = b.dataset.p; state.scY = state.party;
+    document.querySelectorAll("#parties .chip").forEach((c) => c.setAttribute("aria-pressed", c.dataset.p === state.party)); refreshAll(); });
+  $("#mode").addEventListener("change", (e) => setMode(e.target.value));
+  $("#year").addEventListener("click", (e) => { const b = e.target.closest("[data-y]"); if (b && +b.dataset.y !== state.year) setYear(+b.dataset.y); });
+  $("#level").addEventListener("click", (e) => { const b = e.target.closest("[data-level]"); if (b) setLevel(b.dataset.level); });
+  $("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (b) setView(b.dataset.view); });
+  document.querySelectorAll(".lang button").forEach((b) => b.addEventListener("click", () => { lang = b.dataset.lang; LS("valkartan.lang", lang); applyLang(); refreshAll(); }));
+  $("#zin").addEventListener("click", () => map.zoomIn());
+  $("#zout").addEventListener("click", () => map.zoomOut());
+  $("#zall").addEventListener("click", () => map.fitBounds(SWEDEN, { padding: 24 }));
+  $("#osmbtn").addEventListener("click", () => setOsm(!state.osm));
+  $("#copylink").addEventListener("click", copyLink);
+  addEventListener("hashchange", () => { if (location.hash.replace("#", "") !== lastHash) applyHashLive(); });
+  // list
+  $("#lfilter").addEventListener("input", (e) => { state.lfilter = e.target.value; state.llimit = 300; renderList(); });
+  $("#lcols").addEventListener("click", async (e) => { const b = e.target.closest("[data-cols]"); if (!b) return; state.cols = b.dataset.cols; if (state.cols === "sim" && state.level !== "vd") await loadAllYears(); renderList(); });
+  $("#ltable thead").addEventListener("click", (e) => { const b = e.target.closest("[data-sort]"); if (!b) return; const k = b.dataset.sort;
+    state.sort = state.sort.key === k ? { key: k, dir: -state.sort.dir } : { key: k, dir: k === "name" || k === "parent" || k === "win" || k === "sv" || k === "sva" || k === "sd" ? 1 : -1 }; renderList(); });
+  $("#ltable tbody").addEventListener("click", (e) => { const tr = e.target.closest("tr[data-id]"); if (tr) select(state.level, tr.dataset.id, false, "list"); });
+  $("#lmorebtn").addEventListener("click", () => { state.llimit = Infinity; renderList(); });
+  // misc
+  document.addEventListener("click", (e) => { if (!e.target.closest(".search")) $("#suggest").hidden = true; });
+  document.addEventListener("click", (e) => {
+    if (e.target.id !== "scatter") return;
+    const rect = e.target.getBoundingClientRect(), x = e.clientX - rect.left, y = e.clientY - rect.top;
+    let best = null, bd = 64; for (const p of scPts) { const d = (p.x - x) ** 2 + (p.y - y) ** 2; if (d < bd) { bd = d; best = p; } }
+    if (best) select(state.level, best.id);
+  });
+  initSearch();
+  new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", retheme);
+  addEventListener("resize", () => drawScatter());
+}
+async function applyHashLive() {
+  const o = parseHash(location.hash), oldYear = state.year, oldLang = lang;
+  applyParsed(o);
+  const y = state.year; state.year = oldYear;
+  if (y !== oldYear) await setYear(y);
+  if (lang !== oldLang) applyLang();
+  document.querySelectorAll("#parties .chip").forEach((c) => c.setAttribute("aria-pressed", c.dataset.p === state.party));
+  if (state.sel && !byId[state.sel.lvl][state.sel.id]) state.sel = null;
+  setOsm(state.osm); applyLevel(); setView(state.view); applySelection();
+  if (state.sel) zoomTo(state.sel.lvl, state.sel.id);
+}
+function retheme() {
+  if (!mapReady) return;
+  map.setPaintProperty("bg", "background-color", css("--water"));
+  map.setPaintProperty("vd-line", "line-color", css("--map-line"));
+  map.setPaintProperty("kommun-line", "line-color", css("--map-line-k"));
+  map.setPaintProperty("lan-line", "line-color", css("--map-line-l"));
+  for (const l of LEVELS) { map.setPaintProperty(`${l}-sel`, "line-color", css("--ink")); map.setPaintProperty(`${l}-sel-halo`, "line-color", css("--panel")); map.setPaintProperty(`${l}-fill`, "fill-color", ["coalesce", ["feature-state", "c"], css("--nodata")]); }
+  if (map.getLayer("osm")) for (const [k, v] of Object.entries(osmPaint())) map.setPaintProperty("osm", k, v);
+  recolor(); drawScatter();
+}
+
+// search
+let INDEX = [];
+function buildSearchIndex() {
+  if (!META || !byId.vd) return;
+  INDEX = [
+    ...Object.entries(META.lan).map(([id, n]) => ({ lvl: "lan", id, n: n + " " + t("county_suffix"), sub: t("lvl_lan") })),
+    ...Object.entries(META.kommun).map(([id, v]) => ({ lvl: "kommun", id, n: v[0], sub: t("lvl_kommun") })),
+    ...Object.entries(byId.vd).map(([id, f]) => ({ lvl: "vd", id, n: f.properties.n, sub: META.kommun[f.properties.k]?.[0] || "" })),
+  ].map((o) => ({ ...o, key: o.n.toLocaleLowerCase("sv") }));
+}
+function initSearch() {
+  const q = $("#q"), box = $("#suggest"); let active = -1, hits = [];
+  const show = () => {
+    const s = q.value.trim().toLocaleLowerCase("sv");
+    if (s.length < 2) { box.hidden = true; return; }
+    const starts = [], contains = [];
+    for (const o of INDEX) { const i = o.key.indexOf(s); if (i === 0) starts.push(o); else if (i > 0) contains.push(o); if (starts.length > 40) break; }
+    const rank = { lan: 0, kommun: 1, vd: 2 };
+    hits = [...starts.sort((a, b) => rank[a.lvl] - rank[b.lvl]), ...contains.sort((a, b) => rank[a.lvl] - rank[b.lvl])].slice(0, 12);
+    active = -1;
+    box.innerHTML = hits.length ? hits.map((o, i) => `<button type="button" data-i="${i}"><span>${esc(o.n)}</span><small>${esc(o.sub)}</small></button>`).join("") : `<div class="note" style="padding:6px 8px">${esc(t("no_match"))}</div>`;
+    box.hidden = false;
+  };
+  const go = (o) => { box.hidden = true; q.value = o.n; if (state.level !== o.lvl) setLevel(o.lvl); select(o.lvl, o.id); };
+  q.addEventListener("input", show);
+  q.addEventListener("keydown", (e) => {
+    if (box.hidden || !hits.length) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); active = (active + (e.key === "ArrowDown" ? 1 : -1) + hits.length) % hits.length; box.querySelectorAll("button").forEach((b, i) => b.classList.toggle("active", i === active)); }
+    if (e.key === "Enter") { e.preventDefault(); go(hits[Math.max(0, active)]); }
+    if (e.key === "Escape") box.hidden = true;
+  });
+  box.addEventListener("click", (e) => { const b = e.target.closest("[data-i]"); if (b) go(hits[+b.dataset.i]); });
+}
+
+// ======================================================================
+// Boot
+// ======================================================================
+async function boot() {
+  $("#loadmsg").textContent = t("loading");
+  try {
+    if (!window.maplibregl || !window.topojson) throw new Error(t("err_lib"));
+    const [meta, stats, geo] = await Promise.all([getJSON("data/meta.json"), getJSON("data/stats.json"), getJSON("data/geo_2026.json")]);
+    META = meta; ST = stats; GEO26 = geo; META.parties.forEach((p, i) => PI[p.k] = i);
+    applyParsed(parseHash(location.hash));
+    await loadYear(2026);
+    if (state.year !== 2026) await loadYear(state.year);
+    if (state.simAvg) await loadAllYears();
+    byId.vd = Object.fromEntries(VDGEO[state.year].features.map((f) => [f.properties.id, f]));
+    const fc = { vd: VDGEO[state.year], kommun: topoToFC(geo, "kommun", "k"), lan: topoToFC(geo, "lan", "l") };
+    byId.kommun = Object.fromEntries(fc.kommun.features.map((f) => [f.properties.id, f]));
+    byId.lan = Object.fromEntries(fc.lan.features.map((f) => [f.properties.id, f]));
+    if (state.sel && !byId[state.sel.lvl][state.sel.id]) state.sel = null;
+    initControls(); applyLang(); applyLevel();
+    $("#party-ctl").hidden = !["share", "change"].includes(state.mode);
+    $("#osmbtn").setAttribute("aria-pressed", state.osm); $("#osmattr").hidden = !state.osm;
+    setView(state.view);
+    initMap(fc);
+  } catch (err) { $("#loadmsg").textContent = err.message; console.error(err); }
+}
+window.valkartan = { state, get map() { return map; } };
+boot();
+})();
+</script>
