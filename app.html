@@ -167,6 +167,7 @@ table.stats button:hover { text-decoration: underline; text-underline-offset: 2p
 .opbox label { font-weight: 600; }
 .opbox output { font: 500 11px var(--font-mono); text-align: right; }
 .opbox input { grid-column: 1 / 3; width: 130px; accent-color: var(--ink); margin: 0; }
+.cartobtn { top: 222px; }
 .osmbtn[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
 .osmattr { position: absolute; right: 0; bottom: 0; z-index: 5; background: color-mix(in srgb, var(--panel) 85%, transparent); font-size: 11px; padding: 2px 6px; border-top-left-radius: 6px; }
 .osmattr a { color: var(--ink-2); }
@@ -341,6 +342,7 @@ table.predtable td.r.bad { color: var(--ink); font-weight: 600; }
   .legend .s { display: none; }
   .zoom { right: 8px; top: 8px; }
   .osmbtn { right: 8px; top: 112px; padding: 8px; }
+  .cartobtn { top: 205px; }
   .opbox { right: 8px; top: 150px; }
   .opbox input { width: 96px; }
   .osmbtn span { display: none; }
@@ -434,6 +436,7 @@ table.predtable td.r.bad { color: var(--ink); font-weight: 600; }
       <div class="mapwrap" id="mapwrap">
         <div id="map" role="region"></div>
         <button type="button" class="osmbtn" id="osmbtn" aria-pressed="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 2l6 3-6 3-6-3z"/><path d="M2 8l6 3 6-3"/><path d="M2 11l6 3 6-3"/></svg><span data-t="osm"></span></button>
+        <button type="button" class="osmbtn cartobtn" id="cartobtn" aria-pressed="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="5.5" cy="6" r="3.5"/><circle cx="11.5" cy="5" r="2"/><circle cx="10" cy="11.5" r="3"/></svg><span data-t="carto"></span></button>
         <div class="opbox"><label for="opacity" data-t="opacity"></label><input type="range" id="opacity" min="10" max="100" step="5" value="100"><output id="opval" for="opacity">100 %</output></div>
         <div class="osmattr" id="osmattr" hidden><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" data-t="osm_attr"></a></div>
         <div class="zoom">
@@ -556,7 +559,11 @@ const T = {
     scatter_none_old: "Statistiken finns bara för 2026 års valdistrikt, så diagrammet är tomt för valdistrikt i tidigare val. Välj 2026, eller kommuner eller län.",
     sel_missing: " {n} saknar uppgift för den här kombinationen och syns därför inte.",
     opacity: "Färgstyrka", copy_link: "Kopiera länk", link_copied: "Länken kopierad", link_select: "Markera och kopiera",
-    osm: "Bakgrundskarta", osm_title: "Visa OpenStreetMap under valkartan",
+    osm: "Bakgrundskarta", osm_title: "Visa OpenStreetMap under valkartan (kartan ritas då i webb-Mercator)",
+    carto: "Kartogram", carto_title: "Rita varje område som en cirkel med yta efter antal röstberättigade",
+    proj_sweref: "Projektion: SWEREF 99 TM, Sveriges egen kartprojektion – norr och söder i rätt storlek.",
+    proj_merc: "Projektion: webb-Mercator, som bakgrundskartan kräver – norra Sverige ser 2–3 gånger för stort ut.",
+    proj_carto: "Kartogram: varje område är en cirkel vars yta motsvarar antalet röstberättigade, flyttad så lite som möjligt från där väljarna bor.",
     osm_failed: "Bakgrundskartan kunde inte laddas här. Den visas när sidan körs på en egen webbplats.",
     osm_attr: "© OpenStreetMap-bidragsgivare",
     sim_head: "Likhet med riket", sim_vote: "Röstning", sim_demo: "Befolkning", sim_vote_lbl: "Röstavvikelse", sim_demo_lbl: "Befolkningsavvikelse",
@@ -694,7 +701,11 @@ const T = {
     scatter_none_old: "Statistics exist only for the 2026 districts, so the chart is empty for districts in earlier elections. Choose 2026, or municipalities or counties.",
     sel_missing: " {n} has no value for this combination, so it isn't shown.",
     opacity: "Colour opacity", copy_link: "Copy link", link_copied: "Link copied", link_select: "Select and copy",
-    osm: "Background map", osm_title: "Show OpenStreetMap under the election map",
+    osm: "Background map", osm_title: "Show OpenStreetMap under the election map (the map is then drawn in Web Mercator)",
+    carto: "Cartogram", carto_title: "Draw every area as a circle sized by its number of eligible voters",
+    proj_sweref: "Projection: SWEREF 99 TM, Sweden's own map projection – north and south at their true size.",
+    proj_merc: "Projection: Web Mercator, which the background map needs – northern Sweden looks 2–3 times too big.",
+    proj_carto: "Cartogram: each area is a circle whose area matches its number of eligible voters, moved as little as possible from where its voters live.",
     osm_failed: "The background map could not load here. It appears when the page runs on your own website.",
     osm_attr: "© OpenStreetMap contributors",
     sim_head: "Similarity to Sweden", sim_vote: "Voting", sim_demo: "Population", sim_vote_lbl: "Voting deviation", sim_demo_lbl: "Population deviation",
@@ -763,7 +774,7 @@ function groupEditorHtml() {
 }
 function onGroupsChanged(g) { setGroups(g); modeOptions(); renderDetail(); refreshView(); }
 const state = { year: 2026, view: "map", level: "kommun", mode: "winner", party: "S", sel: null, scX: "inc", scY: "S",
-  simKind: "vote", simAvg: false, simLeast: false, simLimit: 50, cols: "res", sort: { key: "name", dir: 1 }, lfilter: "", llimit: 300, osm: false, op: 100, odd: "exclave", oddLimit: 50, et: "RD", predPct: 25, predOrder: "random", predMethod: "combined", predSeed: 1, predManual: new Set(), groups: "abbaabab" };
+  simKind: "vote", simAvg: false, simLeast: false, simLimit: 50, cols: "res", sort: { key: "name", dir: 1 }, lfilter: "", llimit: 300, osm: false, carto: false, op: 100, odd: "exclave", oddLimit: 50, et: "RD", predPct: 25, predOrder: "random", predMethod: "combined", predSeed: 1, predManual: new Set(), groups: "abbaabab" };
 // election types: RD = Riksdag (yellow ballot), RF = region (blue), KF = municipality (white)
 const ET = ["RD", "RF", "KF"];
 const rkey = (y, et = state.et) => et === "RD" ? String(y) : `${y}_${et}`;
@@ -1066,7 +1077,7 @@ const LEVELS = ["lan", "vk", "kommun", "vd"];
 function initMap(fc) {
   map = new maplibregl.Map({
     container: "map", attributionControl: false, dragRotate: false, pitchWithRotate: false, touchPitch: false,
-    bounds: SWEDEN, fitBoundsOptions: { padding: 24 }, maxBounds: [[-40, 45], [75, 76]], minZoom: 2.5, maxZoom: 15,
+    bounds: swedenBounds(), fitBoundsOptions: { padding: 24 }, maxBounds: maxBoundsFor(), minZoom: 2.5, maxZoom: 15,
     style: { version: 8, sources: {}, layers: [{ id: "bg", type: "background", paint: { "background-color": css("--water") } }] },
   });
   map.touchZoomRotate.disableRotation();
@@ -1092,7 +1103,7 @@ function initMap(fc) {
     if (state.osm) addOsm();
     applyLevel(); recolor(); applySelection();
     map.resize();
-    if (state.sel && byId[state.sel.lvl][state.sel.id]) zoomTo(state.sel.lvl, state.sel.id, true); else map.fitBounds(SWEDEN, { padding: 24, duration: 0 });
+    if (state.sel && byId[state.sel.lvl][state.sel.id]) zoomTo(state.sel.lvl, state.sel.id, true); else map.fitBounds(swedenBounds(), { padding: 24, duration: 0 });
     $("#loading").hidden = true;
   });
 }
@@ -1116,13 +1127,15 @@ function addOsm() {
 }
 function setOsm(on) {
   if (on && !state.osm && state.op === 100) setOpacity(60, false);   // let the background show through
+  const before = geomMode();
   state.osm = on; osmFailed = false;
+  if (on) state.carto = false;        // the tiles need Web Mercator shapes
   $("#osmbtn").setAttribute("aria-pressed", on); $("#osmattr").hidden = !on;
   if (mapReady) {
     if (on) addOsm(); else if (map.getLayer("osm")) map.setLayoutProperty("osm", "visibility", "none");
     for (const l of LEVELS) map.setPaintProperty(`${l}-fill`, "fill-opacity", fillOpacity());
   }
-  renderLegend(); writeHash();
+  if (geomMode() !== before) applyGeom(); else { renderLegend(); writeHash(); }
 }
 
 // ---- links: the view is kept in the address (#token.token...) so it can be shared ----
@@ -1139,6 +1152,7 @@ function encodeHash() {
   if (state.scY !== state.party) tk.push("sy-" + state.scY.replace("_", ""));
   if (state.groups !== GROUP_DEFAULT) tk.push("g-" + state.groups);
   if (state.osm) tk.push("osm");
+  if (state.carto) tk.push("carto");
   if (state.op !== 100) tk.push("o-" + state.op);
   if (lang === "en") tk.push("en");
   return tk.join(".");
@@ -1165,6 +1179,7 @@ function parseHash(h) {
     else if (tk === "avg") o.simAvg = true;
     else if (tk === "least") o.simLeast = true;
     else if (tk === "osm") o.osm = true;
+    else if (tk === "carto") o.carto = true;
     else if (/^o-\d{1,3}$/.test(tk)) o.op = +tk.slice(2);
     else if (tk === "en" || tk === "sv") o.lang = tk;
   }
@@ -1190,7 +1205,7 @@ function applyParsed(o) {
   if (o.predSeed) state.predSeed = o.predSeed;
   if (META.stats.some((x) => x.k === o.scX)) state.scX = o.scX; else if (state.mode.startsWith("stat:")) state.scX = state.mode.slice(5);
   if (o.scY && (P.includes(o.scY) || o.scY === "_turnout")) state.scY = o.scY;
-  state.simAvg = !!o.simAvg; state.simLeast = !!o.simLeast; state.osm = !!o.osm;
+  state.simAvg = !!o.simAvg; state.simLeast = !!o.simLeast; state.carto = !!o.carto; state.osm = !!o.osm && !state.carto;
   state.op = o.op != null && o.op >= 0 && o.op <= 100 ? o.op : 100;
   if (o.lang) lang = o.lang;
   state.sel = o.sel && ["lan", "vk", "kommun", "vd"].includes(o.sel.lvl) && o.sel.id ? o.sel : null;
@@ -1244,6 +1259,13 @@ function applyLevel() {
   if (!mapReady) return;
   for (const lvl of LEVELS) map.setLayoutProperty(`${lvl}-fill`, "visibility", lvl === state.level ? "visible" : "none");
   map.setLayoutProperty("vd-line", "visibility", state.level === "vd" ? "visible" : "none");
+  if (state.carto) {                  // cartogram: only the outlines of the circles shown
+    for (const l of LEVELS) map.setLayoutProperty(`${l}-line`, "visibility", l === state.level ? "visible" : "none");
+    map.setLayerZoomRange("vd-line", 7, 24);       // district circles are too small for outlines when zoomed out
+    applySelection();
+    return;
+  }
+  map.setLayerZoomRange("vd-line", 5, 24);
   map.setLayoutProperty("kommun-line", "visibility", state.level === "lan" ? "none" : "visible");
   map.setLayoutProperty("vk-line", "visibility", state.level === "vk" ? "visible" : "none");
   map.setLayoutProperty("lan-line", "visibility", state.level === "vk" ? "none" : "visible");
@@ -1276,17 +1298,43 @@ function renderLegend() {
   if ((mode === "change" || mode === "turnoutchg") && state.level === "vd") notes.push(t("nd_changed"));
   if (mode === "bloc") notes.push(t("bloc_note"));
   if (state.osm && osmFailed) notes.push(t("osm_failed"));
+  notes.push(t("proj_" + geomMode()));
   if (notes.length) h += `<div class="s">${notes.map(esc).join(" ")}</div>`;
   el.innerHTML = h;
 }
+// Cartogram: circles of different levels don't nest, so a selection at another level is shown as the circles
+// of the current level that belong to it (e.g. a municipality as its district circles).
+function relatedIds(sel, level) {
+  if (sel.lvl === level) return [sel.id];
+  const vkm = vkMap(state.year);
+  const ks = sel.lvl === "vd" ? [(rec("vd", sel.id) || byId.vd[sel.id]?.properties)?.k] : sel.lvl === "kommun" ? [sel.id]
+    : Object.keys(META.kommun).filter((k) => sel.lvl === "lan" ? META.kommun[k][1] === sel.id : vkm[k] === sel.id);
+  const kset = new Set(ks.filter(Boolean));
+  if (level === "kommun") return [...kset];
+  if (level === "lan") return [...new Set([...kset].map((k) => META.kommun[k]?.[1]))];
+  if (level === "vk") return [...new Set([...kset].map((k) => vkm[k]))];
+  return Object.keys(byId.vd).filter((id) => kset.has((rec("vd", id) || byId.vd[id]?.properties)?.k));
+}
 function zoomTo(lvl, id, instant = false) {
+  if (state.carto && lvl !== state.level && mapReady) {
+    const fs = relatedIds({ lvl, id }, state.level).map((x) => byId[state.level][x]).filter(Boolean);
+    if (!fs.length) return;
+    const b = fs.reduce((a, f) => [Math.min(a[0], f.bbox[0]), Math.min(a[1], f.bbox[1]), Math.max(a[2], f.bbox[2]), Math.max(a[3], f.bbox[3])], [180, 90, -180, -90]);
+    map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 50, maxZoom: 11, duration: instant ? 0 : 700 });
+    return;
+  }
   const f = byId[lvl][id]; if (!f || !mapReady) return;
   const b = f.bbox, pad = matchMedia("(max-width: 820px)").matches ? 20 : 50;
   map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: pad, maxZoom: lvl === "vd" ? 13 : 10, duration: instant || matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 700 });
 }
 function applySelection() {
   if (!mapReady) return;
-  for (const l of LEVELS) { const v = state.sel && state.sel.lvl === l ? state.sel.id : ""; map.setFilter(`${l}-sel`, ["==", ["get", "id"], v]); map.setFilter(`${l}-sel-halo`, ["==", ["get", "id"], v]); }
+  for (const l of LEVELS) {
+    let f;
+    if (state.carto && state.sel) f = l === state.level ? ["in", ["get", "id"], ["literal", relatedIds(state.sel, l)]] : ["==", ["get", "id"], ""];
+    else f = ["==", ["get", "id"], state.sel && state.sel.lvl === l ? state.sel.id : ""];
+    map.setFilter(`${l}-sel`, f); map.setFilter(`${l}-sel-halo`, f);
+  }
 }
 let pendingZoom = false;        // selection changed while the map was hidden (list view)
 function select(lvl, id, zoom = true, from = "other") {
@@ -1346,13 +1394,103 @@ function updateLiveBadge() {
 async function loadYear(y) {
   const k = rkey(y);
   if (!RES[k]) RES[k] = await getJSON(`data/results_${k}.json${LIVE?.year === y ? liveBust() : ""}`);
-  if (!GEOY[y]) {
-    // each election has its own districts; municipality and county borders are dissolved from them so lines match
-    const topo = y === 2026 ? GEO26 : await getJSON(`data/geo_vd_${y}.json`);
-    GEOY[y] = { vd: topoToFC(topo, "vd", "id"), kommun: topoToFC(topo, "kommun", "k"), lan: topoToFC(topo, "lan", "l"), vk: vkFeatures(topo, y) };
-  }
+  // each election has its own districts; municipality and county borders are dissolved from them so lines match.
+  // The shapes are built from the topology when first needed, in the projection in use (see GEO()).
+  if (!GEOT[y]) GEOT[y] = y === 2026 ? GEO26 : await getJSON(`data/geo_vd_${y}.json`);
+  if (state.carto) await loadCarto(y);
 }
-function useGeo(y) { for (const l of LEVELS) byId[l] = Object.fromEntries(GEOY[y][l].features.map((f) => [f.properties.id, f])); }
+
+// ---- Map shapes. MapLibre only draws Web Mercator, which at Sweden's latitudes makes the north look 2-3 times
+// too big. Without the background map the shapes are therefore drawn in SWEREF 99 TM, Sweden's own projection:
+// coordinates are projected to SWEREF 99 TM and then handed to MapLibre as pseudo longitudes/latitudes near the
+// equator, which Web Mercator turns back into exactly those flat metres. With the OpenStreetMap background the
+// real Web Mercator is used, because the tiles only line up with it. The cartogram uses the same flat metres.
+const GEOT = {}, GEOS = {}, GEOC = {}, CARTO = {};
+const R_EARTH = 6378137, SW_E0 = 500000, SW_N0 = 6900000;
+const SW = (() => {                  // SWEREF 99 TM constants (GRS 80, central meridian 15°E, scale 0.9996)
+  const a = 6378137, f = 1 / 298.257222101, e2 = f * (2 - f), n = f / (2 - f);
+  return { k: 0.9996 * a / (1 + n) * (1 + n * n / 4 + n ** 4 / 64), l0: 15 * Math.PI / 180,
+    A: e2, B: (5 * e2 ** 2 - e2 ** 3) / 6, C: (104 * e2 ** 3 - 45 * e2 ** 4) / 120, D: 1237 * e2 ** 4 / 1260,
+    b: [n / 2 - 2 * n * n / 3 + 5 * n ** 3 / 16 + 41 * n ** 4 / 180, 13 * n * n / 48 - 3 * n ** 3 / 5 + 557 * n ** 4 / 1440,
+      61 * n ** 3 / 240 - 103 * n ** 4 / 140, 49561 * n ** 4 / 161280] };
+})();
+function sweref(lon, lat) {          // WGS 84 -> SWEREF 99 TM [E, N] (Gauss-Krüger, Lantmäteriet's formulas)
+  const p = lat * Math.PI / 180, sp = Math.sin(p), s = sp * sp;
+  const ps = p - sp * Math.cos(p) * (SW.A + SW.B * s + SW.C * s * s + SW.D * s * s * s);
+  const dl = lon * Math.PI / 180 - SW.l0, xi = Math.atan(Math.tan(ps) / Math.cos(dl)), eta = Math.atanh(Math.cos(ps) * Math.sin(dl));
+  let N = xi, E = eta;
+  for (let j = 1; j <= 4; j++) {
+    const ex = Math.exp(2 * j * eta), ch = (ex + 1 / ex) / 2, sh = (ex - 1 / ex) / 2;
+    N += SW.b[j - 1] * Math.sin(2 * j * xi) * ch; E += SW.b[j - 1] * Math.cos(2 * j * xi) * sh;
+  }
+  return [500000 + SW.k * E, SW.k * N];
+}
+const flatLL = (E, N) => [(E - SW_E0) / R_EARTH * 180 / Math.PI, (2 * Math.atan(Math.exp((N - SW_N0) / R_EARTH)) - Math.PI / 2) * 180 / Math.PI];
+function projectTopo(topo) {         // copy of a TopoJSON topology with every point moved to SWEREF 99 TM (flat)
+  const tf = topo.transform;
+  const arcs = topo.arcs.map((arc) => { let x = 0, y = 0; return arc.map((pt) => {
+    let X = pt[0], Y = pt[1];
+    if (tf) { x += X; y += Y; X = x * tf.scale[0] + tf.translate[0]; Y = y * tf.scale[1] + tf.translate[1]; }
+    const [E, N] = sweref(X, Y); return flatLL(E, N);
+  }); });
+  const out = { ...topo, arcs }; delete out.transform; delete out.bbox;
+  return out;
+}
+async function loadCarto(y) { if (!CARTO[y]) CARTO[y] = await getJSON(`data/carto_${y}.json`); }
+function cartoFC(y, lvl) {           // circles from site/data/carto_<year>.json (SWEREF metres), properties from the real shapes
+  const key = { vd: "id", kommun: "k", lan: "l" }[lvl], src = CARTO[y]?.[lvl] || {};
+  const props = lvl === "vk" ? Object.fromEntries(Object.entries(SEATS?.names || {}).map(([id, n]) => [id, { id, n }]))
+    : Object.fromEntries(GEOT[y].objects[lvl].geometries.map((g) => [g.properties[key], { ...g.properties, id: g.properties[key] }]));
+  return { type: "FeatureCollection", features: Object.entries(src).map(([id, [x, yy, r]]) => {
+    const ring = []; for (let i = 0; i <= 40; i++) { const a = 2 * Math.PI * i / 40; ring.push(flatLL(x + r * Math.cos(a), yy + r * Math.sin(a))); }
+    const geometry = { type: "Polygon", coordinates: [ring] };
+    return { type: "Feature", properties: { ...(props[id] || {}), id }, geometry, bbox: bbox(geometry) };
+  }) };
+}
+function geomMode() { return state.carto ? "carto" : state.osm ? "merc" : "sweref"; }
+function GEO(y) {
+  const m = geomMode();
+  if (m === "merc") {
+    if (!GEOY[y]) { const tp = GEOT[y]; GEOY[y] = { vd: topoToFC(tp, "vd", "id"), kommun: topoToFC(tp, "kommun", "k"), lan: topoToFC(tp, "lan", "l"), vk: vkFeatures(tp, y) }; }
+    return GEOY[y];
+  }
+  if (m === "sweref") {
+    if (!GEOS[y]) { const tp = projectTopo(GEOT[y]); GEOS[y] = { vd: topoToFC(tp, "vd", "id"), kommun: topoToFC(tp, "kommun", "k"), lan: topoToFC(tp, "lan", "l"), vk: vkFeatures(tp, y) }; }
+    return GEOS[y];
+  }
+  if (!GEOC[y]) GEOC[y] = Object.fromEntries(LEVELS.map((l) => [l, cartoFC(y, l)]));
+  return GEOC[y];
+}
+function swedenBounds() {
+  if (geomMode() === "merc") return SWEDEN;
+  const G = GEO(state.year), fs = state.carto ? G.lan.features.concat(G[state.level].features) : G.lan.features; let b = [180, 90, -180, -90];
+  for (const f of fs) b = [Math.min(b[0], f.bbox[0]), Math.min(b[1], f.bbox[1]), Math.max(b[2], f.bbox[2]), Math.max(b[3], f.bbox[3])];
+  return [[b[0], b[1]], [b[2], b[3]]];
+}
+function maxBoundsFor() { return geomMode() === "merc" ? [[-40, 45], [75, 76]] : [[-30, -25], [30, 25]]; }
+function useGeo(y) { const G = GEO(y); for (const l of LEVELS) byId[l] = Object.fromEntries(G[l].features.map((f) => [f.properties.id, f])); }
+// switch shapes (SWEREF / Mercator / cartogram) and frame the same area again
+async function applyGeom() {
+  const y = state.year;
+  if (state.carto) await loadCarto(y);
+  useGeo(y);
+  document.querySelectorAll("#cartobtn").forEach((b) => b.setAttribute("aria-pressed", !!state.carto));
+  if (mapReady) {
+    clearHover();
+    map.setMaxBounds(null);
+    for (const l of LEVELS) map.getSource(l).setData(GEO(y)[l]);
+    map.setMaxBounds(maxBoundsFor());
+    applyLevel(); recolor(); applySelection();
+    if (state.sel && byId[state.sel.lvl][state.sel.id]) zoomTo(state.sel.lvl, state.sel.id, true);
+    else map.fitBounds(swedenBounds(), { padding: 24, duration: 0 });
+  }
+  renderLegend(); writeHash();
+}
+async function setCarto(on) {
+  state.carto = on;
+  if (on && state.osm) { state.osm = false; $("#osmbtn").setAttribute("aria-pressed", false); $("#osmattr").hidden = true; if (mapReady && map.getLayer("osm")) map.setLayoutProperty("osm", "visibility", "none"); }
+  await applyGeom();
+}
 async function loadAllYears() { await Promise.all(typeYears().map((y) => { const k = rkey(y); return RES[k] ? null : getJSON(`data/results_${k}.json`).then((d) => { RES[k] = d; }); })); }
 async function setEt(et) {
   if (et === state.et) return;
@@ -1380,7 +1518,7 @@ async function setYear(y) {
   if (state.view === "odd" && state.level === "vd") await loadOdd(y);
   if (state.view === "pred") { state.predManual.clear(); await loadPredData(); }
   if (state.sel && !byId[state.sel.lvl][state.sel.id]) state.sel = null;
-  if (mapReady) { clearHover(); for (const l of LEVELS) map.getSource(l).setData(GEOY[y][l]); applySelection(); }
+  if (mapReady) { clearHover(); for (const l of LEVELS) map.getSource(l).setData(GEO(y)[l]); applySelection(); }
   soft.hidden = true; soft.classList.remove("soft");
   document.querySelectorAll("#year button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.y === y));
   buildSearchIndex(); refreshAll();
@@ -1474,7 +1612,7 @@ function renderDetail() {
 
   el.innerHTML = `<div>${crumbs}<div class="area-kind">${esc(kind)}${lvl === "kommun" ? " · " + esc(t("n_vd", { n: Object.values(byId.vd).filter((f) => f.properties.k === id).length })) : ""}</div><h2 class="area-name">${esc(lvl === "riket" ? t("sweden") : areaName(lvl, id))}</h2>${liveAreaNote(lvl, id)}</div>${body}`;
   el.querySelectorAll("[data-sel]").forEach((b) => b.addEventListener("click", () => {
-    const v = b.dataset.sel; if (v === "riket") { select(null, null, false); mapReady && map.fitBounds(SWEDEN, { padding: 24 }); return; }
+    const v = b.dataset.sel; if (v === "riket") { select(null, null, false); mapReady && map.fitBounds(swedenBounds(), { padding: 24 }); return; }
     const [l, i] = v.split(":"); if (state.level !== l) setLevel(l); select(l, i);
   }));
   el.querySelectorAll("[data-stat]").forEach((b) => b.addEventListener("click", () => { if (state.view === "sim") setView("map"); setMode("stat:" + b.dataset.stat); }));
@@ -2298,7 +2436,7 @@ function applyLang() {
   $("#lfilter").placeholder = t("filter_ph"); $("#lfilter").setAttribute("aria-label", t("filter_ph"));
   $("#zin").setAttribute("aria-label", t("zoom_in")); $("#zout").setAttribute("aria-label", t("zoom_out")); $("#zall").setAttribute("aria-label", t("zoom_all")); $("#zall").title = t("zoom_all");
   $("#map").setAttribute("aria-label", t("map_label"));
-  $("#osmbtn").title = t("osm_title");
+  $("#osmbtn").title = t("osm_title"); $("#cartobtn").title = t("carto_title");
   $("#parties").setAttribute("aria-label", t("party"));
   renderYearButtons(); updateBallot();
   modeOptions(); buildSearchIndex();
@@ -2315,8 +2453,9 @@ function initControls() {
   document.querySelectorAll(".lang button").forEach((b) => b.addEventListener("click", () => { lang = b.dataset.lang; LS("valkartan.lang", lang); applyLang(); refreshAll(); }));
   $("#zin").addEventListener("click", () => map.zoomIn());
   $("#zout").addEventListener("click", () => map.zoomOut());
-  $("#zall").addEventListener("click", () => map.fitBounds(SWEDEN, { padding: 24 }));
+  $("#zall").addEventListener("click", () => map.fitBounds(swedenBounds(), { padding: 24 }));
   $("#osmbtn").addEventListener("click", () => setOsm(!state.osm));
+  $("#cartobtn").addEventListener("click", () => setCarto(!state.carto));
   $("#opacity").addEventListener("input", (e) => setOpacity(+e.target.value));
   $("#copylink").addEventListener("click", copyLink);
   addEventListener("hashchange", () => { if (location.hash.replace("#", "") !== lastHash) applyHashLive(); });
@@ -2352,7 +2491,7 @@ function initControls() {
   addEventListener("resize", () => { drawScatter(); if (state.view === "pred") renderPred(); });
 }
 async function applyHashLive() {
-  const o = parseHash(location.hash), oldYear = state.year, oldLang = lang, oldEt = state.et;
+  const o = parseHash(location.hash), oldYear = state.year, oldLang = lang, oldEt = state.et, oldGeom = geomMode();
   applyParsed(o);
   const y = state.year; state.year = oldYear;
   if (state.et !== oldEt) { updateBallot(); renderYearButtons(); state.year = -1; }
@@ -2362,7 +2501,9 @@ async function applyHashLive() {
   if (state.view === "pred") await loadPredData();
   document.querySelectorAll("#parties .chip").forEach((c) => c.setAttribute("aria-pressed", c.dataset.p === state.party));
   if (state.sel && !byId[state.sel.lvl][state.sel.id]) state.sel = null;
-  setOsm(state.osm); setOpacity(state.op, false); applyLevel(); setView(state.view); applySelection();
+  setOsm(state.osm); setOpacity(state.op, false);
+  if (geomMode() !== oldGeom && y === oldYear) await applyGeom();
+  applyLevel(); setView(state.view); applySelection();
   if (state.sel) zoomTo(state.sel.lvl, state.sel.id);
 }
 function retheme() {
@@ -2429,11 +2570,11 @@ async function boot() {
     if (state.view === "odd") await ensureOdd();
     if (state.view === "pred") await loadPredData();
     useGeo(state.year);
-    const fc = GEOY[state.year];
+    const fc = GEO(state.year);
     if (state.sel && !byId[state.sel.lvl][state.sel.id]) state.sel = null;
     initControls(); applyLang(); applyLevel();
     $("#party-ctl").hidden = !["share", "change"].includes(state.mode);
-    $("#osmbtn").setAttribute("aria-pressed", state.osm); $("#osmattr").hidden = !state.osm;
+    $("#osmbtn").setAttribute("aria-pressed", state.osm); $("#osmattr").hidden = !state.osm; $("#cartobtn").setAttribute("aria-pressed", state.carto);
     setOpacity(state.op, false);
     setView(state.view);
     initMap(fc);
