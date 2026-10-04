@@ -771,10 +771,7 @@ function base() { return isDark() ? "#23272b" : "#f4f4f0"; }
 const SEQ = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"];
 const SIMR = ["#d6efe9", "#a8dccf", "#74c3b3", "#46a696", "#2a8778", "#19695d", "#0e4b43"];
 const DIV_NEG = ["#0d366b", "#256abf", "#6da7ec"], DIV_POS = ["#f0a07f", "#d9573a", "#9c2a17"];
-// Sequential ramp in a party's own hue, built in OKLCH so lightness changes evenly for every party (light
-// colours such as SD's yellow or MP's green used to stay light all the way). Light mode: light -> dark;
-// dark mode: dark -> light. The end nearest the background is as close to it as possible while still
-// keeping 2:1 contrast against it. Checked with the ordinal ramp validator for all parties in both modes.
+// Sequential ramp in a party's own hue, built in OKLCH (see seqFor).
 const SEQ_CACHE = {};
 const srgb2lin = (c) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 const lin2srgb = (c) => c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
@@ -798,15 +795,20 @@ function oklchHex(L, C, H) {
   return "#" + rgb.map((v) => Math.round(Math.max(0, Math.min(1, lin2srgb(Math.max(0, v)))) * 255).toString(16).padStart(2, "0")).join("");
 }
 function seqFor(color) {
-  const dark = isDark(), surface = base(), key = color + dark;
+  const dark = isDark(), key = color + dark;
   if (SEQ_CACHE[key]) return SEQ_CACHE[key];
-  const [, C0, H] = hex2oklch(color), C = Math.max(C0, 0.12);
-  const Cs = dark ? [0.7, 0.85, 0.95, 1, 0.9, 0.7, 0.45] : [0.55, 0.75, 0.9, 1, 1, 0.9, 0.75];
-  let lo = dark ? 0.3 : 0.5, hi = dark ? 0.7 : 0.95;
-  for (let i = 0; i < 30; i++) { const mid = (lo + hi) / 2, ok = contrastRatio(oklchHex(mid, C * Cs[0], H), surface) >= 2.05; if (dark) { if (ok) hi = mid; else lo = mid; } else { if (ok) lo = mid; else hi = mid; } }
-  const L0 = dark ? hi : lo, L1 = dark ? 0.95 : 0.33;
-  return (SEQ_CACHE[key] = Cs.map((k, i) => oklchHex(L0 + (L1 - L0) * i / 6, C * k, H)));
+  const [Lp, Cp, H] = hex2oklch(color);
+  // top = the party's own colour (most intense = most votes); light yellows keep their lightness so SD stays
+  // yellow, other colours are capped so the scale also gets darker. Bottom = a pale (dark mode: dark),
+  // almost grey tint of the same hue. Steps are even in OKLab, so both lightness and colour strength rise.
+  const yellow = Math.cos(H - 1.75) > 0.9;            // hue around 100° (yellow)
+  const Lt = dark ? Math.max(Lp, 0.66) : Math.min(Lp, yellow ? 0.80 : 0.66), Ct = Math.max(Cp, 0.12);
+  const Lb = dark ? 0.36 : 0.96, Cb = 0.02;
+  const out = [];
+  for (let i = 0; i < 7; i++) { const f = i / 6; out.push(oklchHex(Lb + (Lt - Lb) * f, Cb + (Ct - Cb) * f, H)); }
+  return (SEQ_CACHE[key] = out);
 }
+
 function quantile(sorted, q) { const p = (sorted.length - 1) * q, lo = Math.floor(p), hi = Math.ceil(p); return sorted[lo] + (sorted[hi] - sorted[lo]) * (p - lo); }
 function niceRound(x, span) { const step = span > 200 ? 10 : span > 40 ? 1 : span > 8 ? 0.5 : span > 1.5 ? 0.1 : 0.05; return Math.round(x / step) * step; }
 
