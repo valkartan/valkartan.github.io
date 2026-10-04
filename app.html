@@ -270,6 +270,17 @@ table.predtable td.r.bad { color: var(--ink); font-weight: 600; }
 .vkseats .seatlist span { display: inline-flex; align-items: center; gap: 4px; }
 .vkseats i.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .seattable i.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.livebadge { display: inline-flex; align-items: center; gap: 6px; font: 600 12px var(--font-body); color: #b3261e; background: color-mix(in srgb, #e5484d 12%, var(--panel)); border: 1px solid color-mix(in srgb, #e5484d 40%, var(--panel)); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.livebadge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #e5484d; animation: livepulse 1.6s ease-in-out infinite; }
+.livebadge.done { color: var(--ink-2); background: var(--panel); border-color: var(--line-strong); }
+.livebadge.done::before { background: var(--ink-3); animation: none; }
+@keyframes livepulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .livebadge::before { animation: none; } }
+.livebadge { margin-left: auto; }
+.livebadge:not([hidden]) + .ctx { margin-left: 0; }
+.live-note { color: #b3261e; }
+:root[data-theme="dark"] .livebadge, :root[data-theme="dark"] .live-note { color: #ff8b8b; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .livebadge, :root:not([data-theme="light"]) .live-note { color: #ff8b8b; } }
 .seatlist { display: flex; flex-wrap: wrap; gap: 4px 12px; font: 12px var(--font-mono); margin-top: 6px; }
 .seatlist small { color: var(--ink-3); }
 #predchart { width: 100%; display: block; }
@@ -393,6 +404,7 @@ table.predtable td.r.bad { color: var(--ink); font-weight: 600; }
         <button type="button" role="tab" data-view="odd"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 3.5c1.5-1 3-1 4 .5s2.5 1.5 4 .5l1.5 1-1 3 1.5 2.5-2 2-3-1-2.5 1.5-1.5-2 .5-3-2-1.5z"/></svg><span data-t="view_odd"></span></button>
         <button type="button" role="tab" data-view="pred"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 13.5h12"/><path d="M3 11l3-4 3 2 4-6"/><circle cx="13" cy="3" r="1.2" fill="currentColor"/></svg><span data-t="view_pred"></span></button>
       </div>
+      <span class="livebadge" id="livebadge" hidden></span>
       <span class="ctx" id="ctx"></span>
       <button type="button" class="btn linkbtn2" id="copylink"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6.5 9.5l3-3"/><path d="M7 4.5l1.2-1.2a2.8 2.8 0 014 4L11 8.5"/><path d="M9 11.5l-1.2 1.2a2.8 2.8 0 01-4-4L5 7.5"/></svg><span data-t="copy_link"></span></button>
       <input id="linkbox" class="linkbox" type="text" readonly hidden aria-label="Link">
@@ -457,12 +469,18 @@ const T = {
     view_map: "Karta", view_list: "Lista", view_sim: "Mest lik Sverige", view_odd: "Udda distrikt", view_pred: "Valvaka",
     pr_title: "Valvaka: prognos från de första distrikten", pr_reported: "Rapporterade valdistrikt", pr_play: "Spela upp", pr_pause: "Pausa",
     pr_order: "Ordning", pr_order_random: "Slumpvis", pr_order_small: "Minsta först", pr_order_large: "Största först", pr_reshuffle: "Ny slumpordning",
-    seats_head: "Mandat i riksdagen {y}", seats_n: "Mandat", seats_split: "Fasta+utj.", seats_up: "+1 mandat med", seats_down: "−1 mandat med",
+    seats_head: "Mandat i riksdagen {y}", seats_head_live: "Mandat med rösterna räknade hittills", seats_n: "Mandat", seats_split: "Fasta+utj.", seats_up: "+1 mandat med", seats_down: "−1 mandat med",
     seat_from: "från {p}", seat_to: "till {p}", vk_head: "Mandat från valkretsen", vk_head_note: "riksdagsvalet {y}",
     vk_seats: "{n} mandat: {f} fasta + {u} utjämning",
     seats_note: "Räknat som i vallagen: fasta mandat per riksdagsvalkrets, fördelning i hela landet och 39 utjämningsmandat; ger exakt det officiella utfallet 2010–2026. +1/−1: hur många fler eller färre röster partiet hade behövt (fördelade som dess egna, övriga partier oförändrade) för att få ett mandat mer eller mindre, och vilket parti mandatet hade kommit från eller gått till. Partier under 4 % visar hur många röster som fattades till spärren.",
     pr_close: "Närmast ett mandat", pr_close_up: "{p} +1 med {v} fler röster (från {o})", pr_close_down: "{p} −1 med {v} färre (till {o})",
     pr_method: "Metod", pr_m_uniform: "Enhetlig", pr_m_local: "Lokal", pr_m_similar: "Liknande", pr_m_combined: "Kombinerad",
+    pr_order_live: "Rapporterat hittills", pr_counted_so_far: "Räknat hittills",
+    pr_live_note: "Valnatt: {c} av {t} valdistrikt har rapporterat (senast {u}). Prognosen bygger på dem och uppdateras varje minut. Facit finns först när rösterna är färdigräknade.",
+    pr_unc_note_live: "± = ungefärligt 95-procentsintervall: hur mycket prognosen varierar när de rapporterade distrikten dras om, plus hur fel samma metod blev i valet {y} när de minsta distrikten räknades först.",
+    pr_unc_note_live_nobt: "± = ungefärligt 95-procentsintervall från omdragning av de rapporterade distrikten.",
+    live_badge: "Valnatt · {c} av {t} valdistrikt räknade · {u}", live_done: "Preliminär räkning klar · {c} valdistrikt",
+    live_counted: "Valnatt: {c} av {t} valdistrikt räknade hittills", live_none: "Valnatt: inte räknat än",
     pr_order_manual: "Egen – klicka på kartan", pr_manual_help: "Klicka på valdistrikt på kartan för att markera dem som räknade. Skift-klick tar hela kommunen.", pr_clear: "Rensa",
     pr_unc_note: "± = ungefärligt 95-procentsintervall: hur mycket prognosen varierar när de rapporterade distrikten dras om, plus hur fel samma metod och ordning blev i valet {y}. ! = facit utanför intervallet.",
     pr_unc_note_nobt: "± = ungefärligt 95-procentsintervall från omdragning av de rapporterade distrikten (inget tidigare val att testa mot). ! = facit utanför intervallet.",
@@ -589,12 +607,18 @@ const T = {
     view_map: "Map", view_list: "List", view_sim: "Most like Sweden", view_odd: "Odd districts", view_pred: "Election night",
     pr_title: "Election night: forecast from the first districts", pr_reported: "Districts reported", pr_play: "Play", pr_pause: "Pause",
     pr_order: "Order", pr_order_random: "Random", pr_order_small: "Smallest first", pr_order_large: "Largest first", pr_reshuffle: "New random order",
-    seats_head: "Riksdag seats {y}", seats_n: "Seats", seats_split: "Fixed+adj.", seats_up: "+1 seat with", seats_down: "−1 seat with",
+    seats_head: "Riksdag seats {y}", seats_head_live: "Seats on the votes counted so far", seats_n: "Seats", seats_split: "Fixed+adj.", seats_up: "+1 seat with", seats_down: "−1 seat with",
     seat_from: "from {p}", seat_to: "to {p}", vk_head: "Seats from the constituency", vk_head_note: "Riksdag election {y}",
     vk_seats: "{n} seats: {f} fixed + {u} adjustment",
     seats_note: "Counted as in the election law: fixed seats per Riksdag constituency, a national distribution and 39 adjustment seats; this gives exactly the official result for 2010–2026. +1/−1: how many more or fewer votes the party would have needed (spread like its own, other parties unchanged) to win one seat more or one fewer, and which party the seat would have come from or gone to. For parties under 4%, it shows how many votes they were short of the threshold.",
     pr_close: "Closest to a seat", pr_close_up: "{p} +1 with {v} more votes (from {o})", pr_close_down: "{p} −1 with {v} fewer (to {o})",
     pr_method: "Method", pr_m_uniform: "Uniform", pr_m_local: "Local", pr_m_similar: "Similar", pr_m_combined: "Combined",
+    pr_order_live: "Reported so far", pr_counted_so_far: "Counted so far",
+    pr_live_note: "Election night: {c} of {t} voting districts have reported (latest {u}). The forecast is based on them and updates every minute. The actual result comes when all votes are counted.",
+    pr_unc_note_live: "± = rough 95% interval: how much the forecast moves when the reported districts are resampled, plus how wrong the same method was in the {y} election when the smallest districts were counted first.",
+    pr_unc_note_live_nobt: "± = rough 95% interval from resampling the reported districts.",
+    live_badge: "Election night · {c} of {t} districts counted · {u}", live_done: "Preliminary count complete · {c} districts",
+    live_counted: "Election night: {c} of {t} voting districts counted so far", live_none: "Election night: not counted yet",
     pr_order_manual: "Your own – click the map", pr_manual_help: "Click voting districts on the map to mark them as counted. Shift-click takes the whole municipality.", pr_clear: "Clear",
     pr_unc_note: "± = rough 95% interval: how much the forecast moves when the reported districts are resampled, plus how wrong the same method and order were in the {y} election. ! = actual outside the interval.",
     pr_unc_note_nobt: "± = rough 95% interval from resampling the reported districts (no earlier election to test against). ! = actual outside the interval.",
@@ -1125,7 +1149,7 @@ function parseHash(h) {
     if (["map", "list", "sim", "odd", "pred"].includes(tk)) o.view = tk;
     else if (/^r-\d{1,3}$/.test(tk)) o.predPct = +tk.slice(2);
     else if (tk.startsWith("pm-")) o.predMethod = tk.slice(3);
-    else if (tk.startsWith("po-")) { const m = tk.slice(3).match(/^(random|small|large|manual)(\d*)$/); if (m) { o.predOrder = m[1]; if (m[2]) o.predSeed = +m[2]; } }
+    else if (tk.startsWith("po-")) { const m = tk.slice(3).match(/^(random|small|large|manual|live)(\d*)$/); if (m) { o.predOrder = m[1]; if (m[2]) o.predSeed = +m[2]; } }
     else if (tk.startsWith("q-")) o.odd = tk.slice(2);
     else if (/^g-[abn]{8}$/.test(tk)) o.groups = tk.slice(2);
     else if (tk.startsWith("e-")) o.et = tk.slice(2);
@@ -1282,9 +1306,46 @@ function select(lvl, id, zoom = true, from = "other") {
 // Data loading
 // ======================================================================
 const getJSON = (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(t("err_data", { s: u + " " + r.status })); return r.json(); });
+// ---- Election night: data/live.json (written by scripts/live/valnatt.py) says which election is being counted.
+// Results for that year are fetched past the browser/CDN cache and refreshed every minute while counting goes on.
+let LIVE = null, liveTimer = null;
+const liveBust = () => "?t=" + Math.floor(Date.now() / 30000);
+async function loadLiveStatus() { try { LIVE = await getJSON("data/live.json" + liveBust()); } catch (e) { LIVE = null; } }
+function startLive() { if (LIVE?.active && !liveTimer) liveTimer = setInterval(liveTick, 60000); }
+async function liveTick() {
+  await loadLiveStatus();
+  let changed = false;
+  for (const k of Object.keys(RES)) {
+    if (!RES[k]?.live) continue;
+    let fresh; try { fresh = await getJSON(`data/results_${k}.json${liveBust()}`); } catch (e) { continue; }
+    if (fresh?.live?.fetched === RES[k].live.fetched) continue;
+    RES[k] = fresh; changed = true;
+    for (const key of Object.keys(PREP)) if (key.startsWith(k + "|")) delete PREP[key];
+    delete SEAT_CACHE["RD" + fresh.year];
+  }
+  if (changed) { predCache = null; refreshAll(); }
+  if (!LIVE?.active && liveTimer) { clearInterval(liveTimer); liveTimer = null; }
+}
+function liveAreaNote(lvl, id) {
+  const RR = R(); if (!RR?.live) return "";
+  if (lvl === "riket") return `<p class="note live-note">${esc(t("live_counted", { c: fmtInt(RR.live.counted || 0), t: fmtInt(RR.live.total || 0) }))}</p>`;
+  const r = rec(lvl, id);
+  if (lvl === "kommun") return r?.ct ? `<p class="note live-note">${esc(t("live_counted", { c: fmtInt(r.cr || 0), t: fmtInt(r.ct) }))}</p>` : `<p class="note live-note">${esc(t("live_none"))}</p>`;
+  if (lvl === "vd") return r ? "" : `<p class="note live-note">${esc(t("live_none"))}</p>`;
+  return "";
+}
+function updateLiveBadge() {
+  const el = $("#livebadge"); if (!el) return;
+  const L = R()?.live;
+  el.hidden = !L;
+  if (!L) return;
+  const done = L.counted != null && L.counted >= L.total;
+  el.classList.toggle("done", done);
+  el.textContent = t(done ? "live_done" : "live_badge", { c: fmtInt(L.counted || 0), t: fmtInt(L.total || 0), u: (L.updated || "").replace(/^.* (\d\d:\d\d)(:\d\d)?$/, "$1") });
+}
 async function loadYear(y) {
   const k = rkey(y);
-  if (!RES[k]) RES[k] = await getJSON(`data/results_${k}.json`);
+  if (!RES[k]) RES[k] = await getJSON(`data/results_${k}.json${LIVE?.year === y ? liveBust() : ""}`);
   if (!GEOY[y]) {
     // each election has its own districts; municipality and county borders are dissolved from them so lines match
     const topo = y === 2026 ? GEO26 : await getJSON(`data/geo_vd_${y}.json`);
@@ -1376,7 +1437,7 @@ function renderDetail() {
     const localNote = w && w.local ? `<p class="note"><b>${esc(t("largest_local", { n: w.name }))}</b></p>` : "";
     body += `<div><h3 class="sec">${esc(t("vote_share_" + state.et, { y }))} <span>${esc(prevNote)}</span></h3>${localNote}${rowsHead}${rows}<div class="prow head" style="margin-top:2px"><span></span><span>${esc(t("valid_votes"))}</span><span>${fmtInt(r.v)}</span><span></span><span></span></div>${othersHtml}${bloc}</div>`;
     const SS = state.et === "RD" && (lvl === "riket" || lvl === "kommun" || lvl === "lan" || lvl === "vk") ? officialSeats(y) : null;
-    if (SS && lvl === "riket") body += `<div><h3 class="sec">${esc(t("seats_head", { y }))} <span>${esc(t("pr_majority"))}</span></h3>
+    if (SS && lvl === "riket") body += `<div><h3 class="sec">${esc(t(R().live ? "seats_head_live" : "seats_head", { y }))} <span>${esc(t("pr_majority"))}</span></h3>
       ${seatBarHtml(SS.a.total, t("seats_n"))}${seatsSectionHtml(SS, true)}<p class="note">${esc(t("seats_note"))}</p></div>`;
     else if (SS) body += `<div><h3 class="sec">${esc(t("vk_head"))} <span>${esc(t("vk_head_note", { y }))}</span></h3>${vkSeatsHtml(SS, lvl, id)}</div>`;
   }
@@ -1411,7 +1472,7 @@ function renderDetail() {
     </div><canvas id="scatter"></canvas><p class="note" id="scnote"></p></div>`;
   body += `<div class="about"><p><b>${esc(t("sources"))}.</b> ${t("src_text")}</p><p>${esc(t("src_note"))}</p><p><b>${esc(t("priv_head"))}.</b> ${esc(t("priv_text"))}</p></div>`;
 
-  el.innerHTML = `<div>${crumbs}<div class="area-kind">${esc(kind)}${lvl === "kommun" ? " · " + esc(t("n_vd", { n: Object.values(byId.vd).filter((f) => f.properties.k === id).length })) : ""}</div><h2 class="area-name">${esc(lvl === "riket" ? t("sweden") : areaName(lvl, id))}</h2></div>${body}`;
+  el.innerHTML = `<div>${crumbs}<div class="area-kind">${esc(kind)}${lvl === "kommun" ? " · " + esc(t("n_vd", { n: Object.values(byId.vd).filter((f) => f.properties.k === id).length })) : ""}</div><h2 class="area-name">${esc(lvl === "riket" ? t("sweden") : areaName(lvl, id))}</h2>${liveAreaNote(lvl, id)}</div>${body}`;
   el.querySelectorAll("[data-sel]").forEach((b) => b.addEventListener("click", () => {
     const v = b.dataset.sel; if (v === "riket") { select(null, null, false); mapReady && map.fitBounds(SWEDEN, { padding: 24 }); return; }
     const [l, i] = v.split(":"); if (state.level !== l) setLevel(l); select(l, i);
@@ -1759,11 +1820,26 @@ function predPrepare(year) {
   const key = rkey(year) + "|" + state.et;
   if (PREP[key]) return PREP[key];
   const RR = RES[rkey(year)]; if (!RR || !RR.prev) return null;
-  const kprev = {}, natPrev = RR.riket.pp ? RR.riket.pp.map((x) => x / RR.riket.vp) : null;
+  const kprev = {};
+  let natPrev = RR.riket.pp ? RR.riket.pp.map((x) => x / RR.riket.vp) : null;
+  if (RR.live) {
+    const pp = new Array(NP).fill(0); let vp = 0;
+    for (const r of [...Object.values(RR.vd), ...Object.values(RR.pending || {})]) if (r.pp && r.vp) { r.pp.forEach((x, i) => { pp[i] += x; }); vp += r.vp; }
+    natPrev = vp ? pp.map((x) => x / vp) : natPrev;
+  }
   for (const [k, r] of Object.entries(RR.kommun)) if (r.pp && r.vp) kprev[k] = { b: r.pp.map((x) => x / r.vp), t: r.tp / r.ep };
-  const ds = [], idx = {};
-  for (const [id, r] of Object.entries(RR.vd)) {
-    if (!r.v) continue;
+  const ds = [], idx = {}, live = !!RR.live;
+  if (live) {   // previous result per municipality from every district that can be compared, reported or not
+    const acc = {};
+    for (const r of [...Object.values(RR.vd), ...Object.values(RR.pending || {})]) if (r.pp && r.vp) {
+      const a = acc[r.k] ||= { pp: new Array(NP).fill(0), vp: 0, tp: 0, ep: 0 };
+      r.pp.forEach((x, i) => { a.pp[i] += x; }); a.vp += r.vp; a.tp += r.tp || 0; a.ep += r.ep || 0;
+    }
+    for (const [k, a] of Object.entries(acc)) kprev[k] = { b: a.pp.map((x) => x / a.vp), t: a.ep ? a.tp / a.ep : 0.8 };
+  }
+  const rows = Object.entries(RR.vd).concat(live ? Object.entries(RR.pending || {}).map(([id, r]) => [id, { ...r, v: 0, t: 0, pv: new Array(NP).fill(0), _pending: true }]) : []);
+  for (const [id, r] of rows) {
+    if (!r.v && !r._pending) continue;
     const k = r.k, l = META.kommun[k]?.[1];
     let b, bt, own = false;
     if (r.pp && r.vp) { b = r.pp.map((x) => x / r.vp); bt = r.ep ? r.tp / r.ep : kprev[k]?.t; own = true; }
@@ -1771,13 +1847,21 @@ function predPrepare(year) {
     else if (natPrev) { b = natPrev; bt = RR.riket.tp / RR.riket.ep; }
     else continue;
     idx[id] = ds.length;
-    ds.push({ id, k, l, own, b, bt: bt || 0.8, a: r.pv.map((x) => x / r.v), pv: r.pv, v: r.v, t: r.t, e: r.e, tr: r.e ? r.t / r.e : null, nn: null });
+    ds.push({ id, k, l, own, b, bt: bt || 0.8, a: r.v ? r.pv.map((x) => x / r.v) : b, pv: r.pv, v: r.v, t: r.t, e: r.e, tr: r.v && r.e ? r.t / r.e : null, nn: null, reported: !r._pending });
   }
   const nnd = NN[year];
   if (nnd) nnd.ids.forEach((id, i) => { const di = idx[id]; if (di != null) ds[di].nn = nnd.nn[i].map((j) => idx[nnd.ids[j]]).filter((x) => x != null); });
   // Facit = the official national result, including the votes counted outside the districts afterwards.
   // Those "central" votes are forecast from their share and size in the previous election (riket.cp).
-  const rk = RR.riket, cp = rk.cp && rk.cp.v > 0 && rk.vp ? rk.cp : null;
+  const rk = RR.riket;
+  if (live) {   // election night: no final result yet; votes counted afterwards are estimated from the previous election
+    const PR = RES[rkey(year - 4)]?.riket, pc = PR?.c && PR.c.v > 0 && PR.v ? PR.c : null;
+    const central = pc ? { b: pc.pv.map((x) => Math.max(0, x) / pc.v), frac: pc.v / PR.v } : null;
+    const est = ds.reduce((a, d) => a + (d.reported ? d.v : d.e * d.bt * 0.985), 0);
+    return (PREP[key] = { year, ds, idx, live: RR.live, actual: null, counted: rk.v ? rk.pv.map((x) => x / rk.v) : null, countedV: rk.pv,
+      totalV: est || 1, prevNat: natPrev, hasNN: !!nnd, central, seats: null });
+  }
+  const cp = rk.cp && rk.cp.v > 0 && rk.vp ? rk.cp : null;
   const central = cp ? { b: cp.pv.map((x) => Math.max(0, x) / cp.v), frac: cp.v / rk.vp } : null;
   return (PREP[key] = { year, ds, idx, actual: rk.pv.map((x) => x / rk.v), actualV: rk.pv, totalV: rk.v, prevNat: natPrev, hasNN: !!nnd,
     central, seats: rk.ms || null });
@@ -1869,7 +1953,8 @@ function predUncertainty(P, rep, method, cur) {
   let bt = null, btYear = null;
   const PB = predPrepare(state.year - 4);
   if (PB && cur.n) {
-    const order = state.predOrder === "manual" ? "random" : state.predOrder;
+    // live: districts really report roughly smallest first, so test the method that way on the previous election
+    const order = state.predOrder === "manual" ? "random" : state.predOrder === "live" ? "small" : state.predOrder;
     const repB = repFromOrder(PB, predOrderIdx(PB, order, state.predSeed), Math.round(PB.ds.length * cur.n / P.ds.length));
     const pb = predict(PB, repB, method);
     bt = pb.share.map((x, p) => x - PB.actual[p]); btYear = state.year - 4;
@@ -1883,13 +1968,16 @@ function predUncertainty(P, rep, method, cur) {
 let predTimer = null, predCache = null, PRED_REPORTED = new Set();
 function predState() {
   const P = predPrepare(state.year); if (!P) return null;
-  const manual = state.predOrder === "manual";
+  if (P.live && !["live", "manual"].includes(state.predOrder)) state.predOrder = "live";
+  if (!P.live && state.predOrder === "live") state.predOrder = "random";
+  const manual = state.predOrder === "manual", liveOrder = state.predOrder === "live";
   let rep, ord = null;
-  if (manual) { rep = new Uint8Array(P.ds.length); for (const id of state.predManual) { const i = P.idx[id]; if (i != null) rep[i] = 1; } }
+  if (liveOrder) rep = Uint8Array.from(P.ds, (d) => d.reported ? 1 : 0);
+  else if (manual) { rep = new Uint8Array(P.ds.length); for (const id of state.predManual) { const i = P.idx[id]; if (i != null) rep[i] = 1; } }
   else { ord = predOrderIdx(P, state.predOrder, state.predSeed); rep = repFromOrder(P, ord, Math.round(P.ds.length * state.predPct / 100)); }
   const cur = predict(P, rep, state.predMethod);
   let steps = null;
-  if (!manual) {
+  if (!manual && !liveOrder) {
     const ck = [rkey(state.year), state.et, state.predOrder, state.predSeed, state.predMethod].join("|");
     if (!predCache || predCache.k !== ck) {
       const st = []; for (let q = 2; q <= 100; q += 2) st.push({ q, r: predict(P, repFromOrder(P, ord, Math.round(P.ds.length * q / 100)), state.predMethod) });
@@ -1913,14 +2001,16 @@ function renderPred() {
   const RR = R();
   if (!RR || !RR.prev) { el.innerHTML = `<div class="simhead"><h2>${esc(t("pr_title"))}</h2><p class="note">${esc(t("pr_noprev", { y: state.year }))}</p></div>`; PRED_REPORTED = new Set(); return; }
   const S = predState(); if (!S) return;
-  const { P, cur, steps, unc } = S, n = cur.n, N = P.ds.length, manual = state.predOrder === "manual";
-  const parties = META.parties, shares = n ? cur.share : (P.prevNat || P.actual);
-  const errs = shares.map((x, i) => 100 * (x - P.actual[i]));
-  const mae = errs.reduce((a, b) => a + Math.abs(b), 0) / errs.length, worst = errs.map((e, i) => [Math.abs(e), i]).sort((a, b) => b[0] - a[0])[0];
+  const { P, cur, steps, unc } = S, n = cur.n, N = P.ds.length, manual = state.predOrder === "manual", live = !!P.live;
+  const parties = META.parties, shares = n ? cur.share : (P.prevNat || P.actual || P.counted);
+  const errs = live ? null : shares.map((x, i) => 100 * (x - P.actual[i]));
+  const mae = errs ? errs.reduce((a, b) => a + Math.abs(b), 0) / errs.length : 0, worst = errs ? errs.map((e, i) => [Math.abs(e), i]).sort((a, b) => b[0] - a[0])[0] : null;
   const rows = parties.map((p, i) => {
     const u = unc && unc.total[i] != null ? 100 * unc.total[i] : null;
-    const outside = u != null && Math.abs(errs[i]) > u;
-    return `<tr><td><i class="dot" style="background:${p.c}"></i>${p.k}</td><td class="v">${pct(100 * shares[i])}<small>${n ? fmtInt(Math.round(shares[i] * (cur.totV || P.totalV) / 100) * 100) : ""}</small></td><td class="r">${u != null ? "±" + fmt1(u) : ""}</td><td class="v">${pct(100 * P.actual[i])}<small>${fmtInt(P.actualV[i])}</small></td><td class="r ${outside ? "bad" : ""}">${sgn(errs[i])}${outside ? " !" : ""}</td></tr>`;
+    const outside = errs && u != null && Math.abs(errs[i]) > u;
+    const third = live ? (P.counted ? `<td class="v">${pct(100 * P.counted[i])}<small>${fmtInt(P.countedV[i])}</small></td>` : `<td class="v">–</td>`)
+      : `<td class="v">${pct(100 * P.actual[i])}<small>${fmtInt(P.actualV[i])}</small></td><td class="r ${outside ? "bad" : ""}">${sgn(errs[i])}${outside ? " !" : ""}</td>`;
+    return `<tr><td><i class="dot" style="background:${p.c}"></i>${p.k}</td><td class="v">${pct(100 * shares[i])}<small>${n ? fmtInt(Math.round(shares[i] * (cur.totV || P.totalV) / 100) * 100) : ""}</small></td><td class="r">${u != null ? "±" + fmt1(u) : ""}</td>${third}</tr>`;
   }).join("");
   let seatsHtml = "";
   if (state.et === "RD") {
@@ -1938,28 +2028,29 @@ function renderPred() {
         close = c.slice(0, 3).map(([d, i, sg, m]) => t(sg > 0 ? "pr_close_up" : "pr_close_down", { p: parties[i].k, v: fmtInt(d), o: m.other >= 0 ? parties[m.other].k : "–" })).join(" · ");
       }
     }
-    const sa = P.seats || seatsFor(P.actual, state.year);
+    const sa = P.seats || (P.actual ? seatsFor(P.actual, state.year) : null);
     seatsHtml = `<div><h3 class="sec">${esc(t("pr_seats"))} <span>${esc(t("pr_majority"))}</span></h3>
-      ${seatBarHtml(sp, t("pr_pred"))}${seatBarHtml(sa, t("pr_actual"), true)}
-      <div class="seatlist">${parties.slice(0, 8).map((p, i) => `<span><b>${p.k}</b> ${sp[i]}<small> (${esc(t("pr_seats_actual"))} ${sa[i]})</small></span>`).join("")}</div>
+      ${seatBarHtml(sp, t("pr_pred"))}${sa ? seatBarHtml(sa, t("pr_actual"), true) : ""}
+      <div class="seatlist">${parties.slice(0, 8).map((p, i) => `<span><b>${p.k}</b> ${sp[i]}${sa ? `<small> (${esc(t("pr_seats_actual"))} ${sa[i]})</small>` : ""}</span>`).join("")}</div>
       ${close ? `<p class="note">${esc(t("pr_close"))}: ${esc(close)}</p>` : ""}
       <details class="grpdet"><summary>${esc(t("grp_change"))}</summary>${groupEditorHtml()}</details></div>`;
   }
-  const uncNote = unc ? t(unc.bt ? "pr_unc_note" : "pr_unc_note_nobt", { y: unc.btYear ?? "" }) : "";
+  const uncNote = unc ? t(live ? (unc.bt ? "pr_unc_note_live" : "pr_unc_note_live_nobt") : unc.bt ? "pr_unc_note" : "pr_unc_note_nobt", { y: unc.btYear ?? "" }) : "";
   const methodBtns = PRED_METHODS.map((m) => `<button type="button" data-m="${m}" aria-pressed="${state.predMethod === m}" ${(m === "similar" || m === "combined") && !P.hasNN ? "disabled" : ""}>${esc(t("pr_m_" + m))}</button>`).join("");
   el.innerHTML = `<div class="simhead"><h2>${esc(t("pr_title"))}</h2>
-    ${manual ? `<div class="predrow"><span class="note">${esc(t("pr_manual_help"))}</span><button type="button" class="btn" id="predclear">${esc(t("pr_clear"))}</button></div>`
+    ${live && state.predOrder === "live" ? `<p class="note live-note">${esc(t("pr_live_note", { c: fmtInt(P.live.counted || 0), t: fmtInt(P.live.total || 0), u: P.live.updated || "" }))}</p>`
+      : manual ? `<div class="predrow"><span class="note">${esc(t("pr_manual_help"))}</span><button type="button" class="btn" id="predclear">${esc(t("pr_clear"))}</button></div>`
       : `<div><label class="ctl-label" for="predpct">${esc(t("pr_reported"))}: <span class="num">${state.predPct} %</span></label>
       <div class="predrow"><input type="range" id="predpct" min="0" max="100" step="1" value="${state.predPct}"><button type="button" class="btn" id="predplay">${esc(predTimer ? t("pr_pause") : t("pr_play"))}</button></div></div>`}
     <div><span class="ctl-label">${esc(t("pr_method"))}</span><div class="seg methodseg" role="group" id="predmethod">${methodBtns}</div></div>
     <div class="opts">
-      <select id="predorder" aria-label="${esc(t("pr_order"))}">${["random", "small", "large", "manual"].map((o) => `<option value="${o}" ${state.predOrder === o ? "selected" : ""}>${esc(t("pr_order") + ": " + t("pr_order_" + o))}</option>`).join("")}</select>
+      <select id="predorder" aria-label="${esc(t("pr_order"))}">${(live ? ["live", "manual"] : ["random", "small", "large", "manual"]).map((o) => `<option value="${o}" ${state.predOrder === o ? "selected" : ""}>${esc(t("pr_order") + ": " + t("pr_order_" + o))}</option>`).join("")}</select>
       ${state.predOrder === "random" ? `<button type="button" class="linkbtn" id="predshuffle">${esc(t("pr_reshuffle"))}</button>` : ""}
     </div>
     <p class="note">${n ? esc(t("pr_counted", { n: fmtInt(n), N: fmtInt(N), v: fmtInt(cur.repV), p: pct(100 * cur.f) })) : esc(t("pr_none"))}</p></div>
     <div class="predbody">
-      <table class="stats predtable"><thead><tr><th>${esc(t("pr_party"))}</th><th>${esc(t("pr_pred"))} ${state.year}</th><th></th><th>${esc(t("pr_actual"))}</th><th>${esc(t("pr_err"))}</th></tr></thead><tbody>${rows}</tbody></table>
-      <p class="note">${esc(t("pr_mae", { e: fmt2(mae), m: fmt1(worst[0]), k: parties[worst[1]].k }))}${uncNote ? " " + esc(uncNote) : ""}</p>
+      <table class="stats predtable"><thead><tr><th>${esc(t("pr_party"))}</th><th>${esc(t("pr_pred"))} ${state.year}</th><th></th>${live ? `<th>${esc(t("pr_counted_so_far"))}</th>` : `<th>${esc(t("pr_actual"))}</th><th>${esc(t("pr_err"))}</th>`}</tr></thead><tbody>${rows}</tbody></table>
+      <p class="note">${errs ? esc(t("pr_mae", { e: fmt2(mae), m: fmt1(worst[0]), k: parties[worst[1]].k })) + " " : ""}${uncNote ? esc(uncNote) : ""}</p>
       ${seatsHtml}
       ${steps ? `<div><h3 class="sec">${esc(t("pr_chart"))}</h3><canvas id="predchart"></canvas></div>` : ""}
       <details class="method"><summary>${esc(t("pr_method_title"))}</summary>${T[lang].pr_method_text.map((x) => `<p>${x}</p>`).join("")}</details>
@@ -1988,8 +2079,9 @@ function slSeats(v, n, first, start) {
   return s;
 }
 // vv: { constituency: [votes for the 8 parties + others] }. Returns { total, fsum, fixed: {vk: [..]}, adj: {vk: [..]} }.
-function allocateSeats(vv, fixed, year) {
-  const first = year >= 2018 ? 1.2 : 1.4, NM = 8, vks = Object.keys(fixed);
+function allocateSeats(vv0, fixed, year) {
+  const first = year >= 2018 ? 1.2 : 1.4, NM = 8, vks = Object.keys(fixed), vv = {};
+  for (const vk of vks) vv[vk] = vv0[vk] || new Array(9).fill(0);   // election night: some constituencies have no votes yet
   const nat = new Array(NM).fill(0); let allv = 0;
   for (const vk of vks) { const v = vv[vk] || []; for (let p = 0; p < v.length; p++) { allv += v[p] || 0; if (p < NM) nat[p] += v[p] || 0; } }
   const over4 = nat.map((x) => x > 0 && x >= 0.04 * allv);
@@ -2195,7 +2287,7 @@ function refreshView() {
 function refreshAll() {
   modeOptions();
   $("#ctx").textContent = t("ctx", { lvl: t("lvl_" + state.level + "_p"), y: state.year, et: t("et_long_" + state.et) });
-  refreshView(); renderDetail();
+  refreshView(); renderDetail(); updateLiveBadge();
 }
 function applyLang() {
   document.documentElement.lang = lang;
@@ -2328,7 +2420,8 @@ async function boot() {
   try {
     if (!window.maplibregl || !window.topojson) throw new Error(t("err_lib"));
     const [meta, stats, geo, seats] = await Promise.all([getJSON("data/meta.json"), getJSON("data/stats.json"), getJSON("data/geo_2026.json"), getJSON("data/seats.json").catch(() => null)]);
-    META = meta; ST = stats; GEO26 = geo; SEATS = seats; META.parties.forEach((p, i) => PI[p.k] = i);
+    META = meta; ST = stats; GEO26 = geo; SEATS = seats;
+    await loadLiveStatus(); META.parties.forEach((p, i) => PI[p.k] = i);
     applyParsed(parseHash(location.hash));
     await loadYear(2026);
     if (state.year !== 2026) await loadYear(state.year);
@@ -2344,6 +2437,7 @@ async function boot() {
     setOpacity(state.op, false);
     setView(state.view);
     initMap(fc);
+    startLive();
   } catch (err) { $("#loadmsg").textContent = err.message; console.error(err); }
 }
 window.valkartan = { state, get map() { return map; }, pred: { loadPredData, predPrepare, predict, predOrderIdx, repFromOrder, seatsFor, predUncertainty } };
