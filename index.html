@@ -232,6 +232,7 @@ ol.rank .sc { font: 500 14px var(--font-mono); text-align: right; }
 ol.rank .sc small { display: block; font: 400 10.5px var(--font-body); color: var(--ink-3); }
 ol.rank .why { grid-column: 2 / 4; display: flex; gap: 6px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-2); }
 ol.rank .why span { background: var(--chip); border-radius: 4px; padding: 1px 6px; }
+ol.rank .why span.muni { background: none; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-3); cursor: help; }
 ol.rank.odd li { grid-template-columns: 34px minmax(0, 1fr) 0; }
 .predrow { display: flex; gap: 10px; align-items: center; }
 .predrow input { flex: 1; accent-color: var(--ink); }
@@ -515,8 +516,11 @@ const T = {
     ],
     odd_title: "Udda distrikt", odd_pick: "Visa", odd_g_shape: "Form och gränser", odd_g_vote: "Valresultat", odd_g_size: "Storlek",
     odd_only_vd: "Gäller valdistrikt – visar valdistrikten.", odd_legend: "Markerade: de {n} första i listan", odd_none: "Inga områden uppfyller det här.",
-    oc_exclave: "Utspridda distrikt (exklaver)", oc_exclave_d: "Distrikt som består av flera delar med andra distrikt emellan. Sorterat efter hur långt bort den mest avlägsna delen ligger. Öar i havet räknas inte, bara delar som omges av andra distrikt. Delar som nuddar resten av distriktet, till exempel i ett hörn, räknas inte heller. Även mycket små delar är med, så en del kan vara rester av slarvigt ritade gränser.",
-    oc_exclave_t: "{n} del(ar) utanför huvuddelen · längst bort {gap} km",
+    oc_exclave: "Utspridda distrikt (exklaver)", oc_exclave_d: "Distrikt som består av flera delar med andra distrikt emellan. Sorterat efter hur långt bort den mest avlägsna delen ligger. Öar i havet räknas inte, bara delar som omges av andra distrikt. Delar som nuddar resten av distriktet, till exempel i ett hörn, räknas inte heller. Även mycket små delar är med, så en del kan vara rester av slarvigt ritade gränser. Märkta ”kommungränsen” (ljusare på kartan): delarna finns bara för att kommunen själv har exklaver i en grannkommun.",
+    oc_exclave_t: "{n} del(ar) utanför huvuddelen · längst bort {gap} km", oc_exclave_m_t: "{n} del(ar) inne i {k} · längst bort {gap} km",
+    oc_exclave_mix_t: "{n} del(ar) utanför huvuddelen, längst bort {gap} km · {m} del(ar) inne i {k}", oc_muni: "kommungränsen",
+    oc_muni_tip: "Delarna ligger i en annan kommun. Det är kommunen själv som har exklaver där (kommungränser följer fastighetsgränser), så distriktet måste ta med dem.",
+    oc_lg_own: "Distriktets egen uppdelning", oc_lg_muni: "Följer kommunens exklaver",
     oc_enclave: "Distrikt inuti ett annat (enklaver)", oc_enclave_d: "Distrikt som helt omges av ett enda annat distrikt, som ett hål i en munk.", oc_enclave_t: "ligger helt inuti {h}",
     oc_hosts: "Distrikt med andra distrikt inuti", oc_hosts_d: "Munken själv: distrikt som helt omsluter ett eller flera andra distrikt.", oc_hosts_t: "omsluter {n} distrikt",
     oc_stretched: "Mest utdragna", oc_stretched_d: "Längsta sida delat med kortaste sida för den minsta rektangel som rymmer distriktet.", oc_stretched_t: "{v} gånger så långt som brett",
@@ -657,8 +661,11 @@ const T = {
     ],
     odd_title: "Odd districts", odd_pick: "Show", odd_g_shape: "Shape and borders", odd_g_vote: "Results", odd_g_size: "Size",
     odd_only_vd: "Applies to voting districts – showing districts.", odd_legend: "Highlighted: the first {n} in the list", odd_none: "No areas match this.",
-    oc_exclave: "Scattered districts (exclaves)", oc_exclave_d: "Districts made of several pieces with other districts in between, sorted by how far away the most distant piece is. Islands in the sea don't count, only pieces surrounded by other districts. Pieces that touch the rest of the district, for example at a corner, don't count either. Even very small pieces are included, so some may be leftovers of carelessly drawn borders.",
-    oc_exclave_t: "{n} piece(s) outside the main part · farthest {gap} km away",
+    oc_exclave: "Scattered districts (exclaves)", oc_exclave_d: "Districts made of several pieces with other districts in between, sorted by how far away the most distant piece is. Islands in the sea don't count, only pieces surrounded by other districts. Pieces that touch the rest of the district, for example at a corner, don't count either. Even very small pieces are included, so some may be leftovers of carelessly drawn borders. Marked “municipal border” (lighter on the map): the pieces exist only because the municipality itself has exclaves in a neighbouring municipality.",
+    oc_exclave_t: "{n} piece(s) outside the main part · farthest {gap} km away", oc_exclave_m_t: "{n} piece(s) inside {k} · farthest {gap} km away",
+    oc_exclave_mix_t: "{n} piece(s) outside the main part, farthest {gap} km away · {m} piece(s) inside {k}", oc_muni: "municipal border",
+    oc_muni_tip: "The pieces lie in another municipality. The municipality itself has exclaves there (municipal borders follow property boundaries), so the district has to include them.",
+    oc_lg_own: "The district's own split", oc_lg_muni: "Follows the municipality's exclaves",
     oc_enclave: "Districts inside another (enclaves)", oc_enclave_d: "Districts completely surrounded by one other district, like the hole in a doughnut.", oc_enclave_t: "lies entirely inside {h}",
     oc_hosts: "Districts with others inside", oc_hosts_d: "The doughnut itself: districts that completely enclose one or more other districts.", oc_hosts_t: "encloses {n} district(s)",
     oc_stretched: "Most stretched", oc_stretched_d: "Longest side divided by shortest side of the smallest rectangle that fits around the district.", oc_stretched_t: "{v} times as long as it is wide",
@@ -1013,8 +1020,8 @@ function buildScale() {
     return { type: "pred", color: (v) => v ? (v.local ? LOCAL_C : META.parties[PI[v.k]].c) : rest };
   }
   if (mode === "odd") {
-    const hl = isDark() ? "#f2994a" : "#d4570f", rest = isDark() ? "#3a3e42" : "#e3e4df";
-    return { type: "odd", color: (v) => v ? (v.party && state.odd !== "zero" ? (PI[v.party] != null ? META.parties[PI[v.party]].c : LOCAL_C) : hl) : rest };
+    const hl = isDark() ? "#f2994a" : "#d4570f", rest = isDark() ? "#3a3e42" : "#e3e4df", muni = isDark() ? "#8c6447" : "#efbf98";
+    return { type: "odd", hl, muni, color: (v) => v ? (v.party && state.odd !== "zero" ? (PI[v.party] != null ? META.parties[PI[v.party]].c : LOCAL_C) : v.muni ? muni : hl) : rest };
   }
   if (mode === "winner") {
     const present = new Set(ids.map((id) => winner(rec(lvl, id))?.k).filter(Boolean));
@@ -1300,7 +1307,9 @@ function renderLegend() {
     if (s.ends) h += `<div class="lg-ends"><span>${esc(s.ends[0])}</span><span>${esc(s.ends[1])}</span></div>`;
   }
   if (s.type === "pred") { el.innerHTML = `<div class="t">${esc(t("view_pred"))}</div><div class="s" style="margin-top:0">${esc(t("pr_legend"))}</div>`; return; }
-  if (s.type === "odd") { el.innerHTML = h + `<div class="s" style="margin-top:0">${esc(t("odd_legend", { n: fmtInt(ODD_SET.size) }))}</div>`; return; }
+  if (s.type === "odd") {
+    const two = state.odd === "exclave" ? `<div class="lg-cats"><span><i style="background:${s.hl}"></i>${esc(t("oc_lg_own"))}</span><span><i style="background:${s.muni}"></i>${esc(t("oc_lg_muni"))}</span></div>` : "";
+    el.innerHTML = h + two + `<div class="s" style="margin-top:0">${esc(t("odd_legend", { n: fmtInt(ODD_SET.size) }))}</div>`; return; }
   const missing = levelIds().some((id) => metricValue(state.level, id) == null);
   if (missing) h += `<div class="lg-cats" style="margin-top:6px"><span><i style="background:var(--nodata);box-shadow:inset 0 0 0 1px var(--line-strong)"></i>${esc(t("no_data"))}</span></div>`;
   const notes = [];
@@ -2010,7 +2019,11 @@ function topTwo(r) { const a = MAINP.map((k) => [k, r.pv[PI[k]]]); for (const o 
 function kommunOf(id) { return (rec("vd", id) || byId.vd[id]?.properties)?.k; }
 // each category: group, vd-only?, value(level, id) -> {v, txt} | null, ascending?
 const ODD_CATS = {
-  exclave: { g: "shape", vd: true, f: (L, id) => { const o = ODD[state.year]?.[id]; return o && o.ex ? { v: o.gap, txt: t("oc_exclave_t", { n: o.ex, gap: fmt1(o.gap) }) } : null; } },
+  exclave: { g: "shape", vd: true, f: (L, id) => { const o = ODD[state.year]?.[id]; if (!o || !o.ex) return null;
+    const m = o.exm || 0, k = (o.km || []).map((c) => areaName("kommun", c)).join(", ");
+    const txt = !m ? t("oc_exclave_t", { n: o.ex, gap: fmt1(o.gap) }) : m === o.ex ? t("oc_exclave_m_t", { n: m, k, gap: fmt1(o.gap) })
+      : t("oc_exclave_mix_t", { n: o.ex - m, gap: fmt1(o.gapo), m, k });
+    return { v: o.gap, txt, muni: m === o.ex, mixed: m > 0 && m < o.ex }; } },
   enclave: { g: "shape", vd: true, asc: true, f: (L, id) => { const o = ODD[state.year]?.[id]; return o && o.enc ? { v: o.km2, txt: t("oc_enclave_t", { h: areaName("vd", o.enc) }) } : null; } },
   hosts: { g: "shape", vd: true, f: (L, id) => { const o = ODD[state.year]?.[id]; return o && o.hosts ? { v: o.hosts, txt: t("oc_hosts_t", { n: o.hosts }) } : null; } },
   stretched: { g: "shape", vd: true, f: (L, id) => { const o = ODD[state.year]?.[id]; return o && o.el ? { v: o.el, txt: t("oc_stretched_t", { v: fmt1(o.el) }) } : null; } },
@@ -2060,7 +2073,7 @@ function renderOdd() {
   const shown = ODD_ROWS.slice(0, Math.max(state.oddLimit, selRank + 10));
   const items = shown.map((r, i) => {
     const dot = r.party ? `<i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${PI[r.party] != null ? META.parties[PI[r.party]].c : LOCAL_C};margin-right:5px"></i>` : "";
-    return `<li data-id="${esc(r.id)}"${r.id === selId ? ' class="sel"' : ""}><span class="no">${i + 1}</span><span class="nm"><b>${esc(areaName(state.level, r.id))}</b><small>${esc(parentName(state.level, r.id))}</small></span><span></span><div class="why"><span>${dot}${esc(r.txt)}</span></div></li>`;
+    return `<li data-id="${esc(r.id)}"${r.id === selId ? ' class="sel"' : ""}><span class="no">${i + 1}</span><span class="nm"><b>${esc(areaName(state.level, r.id))}</b><small>${esc(parentName(state.level, r.id))}</small></span><span></span><div class="why"><span>${dot}${esc(r.txt)}</span>${r.muni || r.mixed ? `<span class="muni" title="${esc(t("oc_muni_tip"))}">${esc(t("oc_muni"))}</span>` : ""}</div></li>`;
   }).join("");
   el.innerHTML = `<div class="simhead"><h2>${esc(t("odd_title"))}</h2>
     <div><label class="ctl-label" for="oddcat">${esc(t("odd_pick"))}</label><select id="oddcat">${groups}</select></div>
