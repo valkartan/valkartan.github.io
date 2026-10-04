@@ -522,7 +522,7 @@ const T = {
     no_prev: "Ingen jämförelse med tidigare val.",
     largest_lead: "Blekare = mindre ledning (under 30 %, 30–40 %, 40–50 %, över 50 %).",
     decrease: "Minskning", increase: "Ökning",
-    bloc_left: "{a} större", bloc_right: "{b} större", bloc_note: "Skillnad i procentenheter mellan gruppernas sammanlagda andelar. Grupperna kan ändras under röstfördelningen i panelen.",
+    share_low: "← lägre andel {k}", share_high: "högre andel {k} →", bloc_left: "{a} större", bloc_right: "{b} större", bloc_note: "Skillnad i procentenheter mellan gruppernas sammanlagda andelar. Grupperna kan ändras under röstfördelningen i panelen.",
     grp_title: "Grupper", grp_change: "Ändra grupper", grp_help: "Klicka på ett parti för att flytta det: röd sida → blå sida → utanför.",
     grp_p_tido: "Tidöpartierna mot S+V+MP+C", grp_p_alliance: "Alliansen mot de rödgröna, SD utanför", grp_p_jan: "Januariavtalet (S+MP+C+L+V) mot M+KD+SD", grp_p_custom: "Egna grupper",
     no_data: "Uppgift saknas", nd_changed: "Uppgift saknas: valdistriktet har ändrats sedan förra valet.",
@@ -654,7 +654,7 @@ const T = {
     no_prev: "No earlier election to compare with.",
     largest_lead: "Paler = smaller lead (under 30%, 30–40%, 40–50%, over 50%).",
     decrease: "Decrease", increase: "Increase",
-    bloc_left: "{a} ahead", bloc_right: "{b} ahead", bloc_note: "Percentage points between the two groups' combined shares. The groups can be changed under the vote shares in the panel.",
+    share_low: "← lower {k} share", share_high: "higher {k} share →", bloc_left: "{a} ahead", bloc_right: "{b} ahead", bloc_note: "Percentage points between the two groups' combined shares. The groups can be changed under the vote shares in the panel.",
     grp_title: "Groups", grp_change: "Change groups", grp_help: "Click a party to move it: red side → blue side → neither.",
     grp_p_tido: "Tidö parties vs S+V+MP+C", grp_p_alliance: "Alliance vs red-greens, SD outside", grp_p_jan: "January agreement (S+MP+C+L+V) vs M+KD+SD", grp_p_custom: "Custom groups",
     no_data: "No data", nd_changed: "No data: district boundaries changed since the previous election.",
@@ -763,7 +763,42 @@ function base() { return isDark() ? "#23272b" : "#f4f4f0"; }
 const SEQ = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"];
 const SIMR = ["#d6efe9", "#a8dccf", "#74c3b3", "#46a696", "#2a8778", "#19695d", "#0e4b43"];
 const DIV_NEG = ["#0d366b", "#256abf", "#6da7ec"], DIV_POS = ["#f0a07f", "#d9573a", "#9c2a17"];
-function seqFor(color) { const b = base(), dark = mix(color, "#000000", .45); return [mix(b, color, .14), mix(b, color, .3), mix(b, color, .48), mix(b, color, .68), mix(b, color, .86), color, dark]; }
+// Sequential ramp in a party's own hue, built in OKLCH so lightness changes evenly for every party (light
+// colours such as SD's yellow or MP's green used to stay light all the way). Light mode: light -> dark;
+// dark mode: dark -> light. The end nearest the background is as close to it as possible while still
+// keeping 2:1 contrast against it. Checked with the ordinal ramp validator for all parties in both modes.
+const SEQ_CACHE = {};
+const srgb2lin = (c) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+const lin2srgb = (c) => c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
+const hex2lin = (h) => [1, 3, 5].map((i) => srgb2lin(parseInt(h.slice(i, i + 2), 16) / 255));
+const relLum = (h) => { const [r, g, b] = hex2lin(h); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+const contrastRatio = (a, b) => { const x = relLum(a), y = relLum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+function hex2oklch(h) {
+  const [r, g, b] = hex2lin(h);
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b), m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b), q = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  const A = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * q, B = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * q;
+  return [0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * q, Math.hypot(A, B), Math.atan2(B, A)];
+}
+function oklchHex(L, C, H) {
+  let c = C, rgb;
+  for (let i = 0; i < 60; i++) {         // reduce chroma until the colour fits in sRGB
+    const A = c * Math.cos(H), B = c * Math.sin(H);
+    const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3, m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3, q = (L - 0.0894841775 * A - 1.2914855480 * B) ** 3;
+    rgb = [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * q, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * q, -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * q];
+    if (rgb.every((v) => v >= -1e-4 && v <= 1 + 1e-4)) break; c *= 0.94;
+  }
+  return "#" + rgb.map((v) => Math.round(Math.max(0, Math.min(1, lin2srgb(Math.max(0, v)))) * 255).toString(16).padStart(2, "0")).join("");
+}
+function seqFor(color) {
+  const dark = isDark(), surface = base(), key = color + dark;
+  if (SEQ_CACHE[key]) return SEQ_CACHE[key];
+  const [, C0, H] = hex2oklch(color), C = Math.max(C0, 0.12);
+  const Cs = dark ? [0.7, 0.85, 0.95, 1, 0.9, 0.7, 0.45] : [0.55, 0.75, 0.9, 1, 1, 0.9, 0.75];
+  let lo = dark ? 0.3 : 0.5, hi = dark ? 0.7 : 0.95;
+  for (let i = 0; i < 30; i++) { const mid = (lo + hi) / 2, ok = contrastRatio(oklchHex(mid, C * Cs[0], H), surface) >= 2.05; if (dark) { if (ok) hi = mid; else lo = mid; } else { if (ok) lo = mid; else hi = mid; } }
+  const L0 = dark ? hi : lo, L1 = dark ? 0.95 : 0.33;
+  return (SEQ_CACHE[key] = Cs.map((k, i) => oklchHex(L0 + (L1 - L0) * i / 6, C * k, H)));
+}
 function quantile(sorted, q) { const p = (sorted.length - 1) * q, lo = Math.floor(p), hi = Math.ceil(p); return sorted[lo] + (sorted[hi] - sorted[lo]) * (p - lo); }
 function niceRound(x, span) { const step = span > 200 ? 10 : span > 40 ? 1 : span > 8 ? 0.5 : span > 1.5 ? 0.1 : 0.05; return Math.round(x / step) * step; }
 
@@ -951,7 +986,13 @@ function buildScale() {
     if (mode === "bloc") { neg = ["#7a1010", "#c33b2e", "#ec9a86"]; pos = ["#a9c7ea", "#3d78c4", "#123f7a"]; ends = [t("bloc_left", { a: grpName(OPP) }), t("bloc_right", { b: grpName(GOV) })]; }
     const mid = isDark() ? "#55595e" : "#d9d8d2";
     const colors = [neg[0], neg[1], neg[2], mid, pos[0], pos[1], pos[2]];
-    if (mode === "change") { const s = seqFor(META.parties[PI[state.party]].c); colors.splice(4, 3, s[2], s[4], s[6]); }
+    if (mode === "change") {
+      // increase in the party's own hue, decrease in the opposite hue, so the two sides never look alike
+      // (blue parties used to have blue on both sides)
+      const pc = META.parties[PI[state.party]].c, [, , H] = hex2oklch(pc);
+      const up = seqFor(pc), down = seqFor(oklchHex(0.55, 0.13, H + Math.PI));
+      colors.splice(0, 3, down[6], down[4], down[2]); colors.splice(4, 3, up[2], up[4], up[6]);
+    }
     const color = (v) => { if (v == null) return null; for (let i = 1; i < edges.length - 1; i++) if (v < edges[i]) return colors[i - 1]; return colors[6]; };
     return { type: "div", edges, colors, color, ends };
   }
@@ -968,7 +1009,7 @@ function buildScale() {
   const pick = (i) => ramp[Math.round(i * (ramp.length - 1) / Math.max(1, k - 1))];
   const colors = Array.from({ length: k }, (_, i) => pick(i));
   const color = (v) => { if (v == null) return null; for (let i = 1; i < edges.length - 1; i++) if (v < edges[i]) return colors[i - 1]; return colors[k - 1]; };
-  return { type: "seq", edges, colors, color, ends: sim ? [t("more_like"), t("less_like")] : null };
+  return { type: "seq", edges, colors, color, ends: sim ? [t("more_like"), t("less_like")] : mode === "share" ? [t("share_low", { k: state.party }), t("share_high", { k: state.party })] : null };
 }
 
 // ======================================================================
