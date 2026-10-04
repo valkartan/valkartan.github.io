@@ -1,9 +1,13 @@
 <title>Valkartan</title>
 <meta name="description" content="Riksdags-, region- och kommunvalen 2010–2026 på karta och i listor, per län, kommun och valdistrikt, med SCB-statistik och jämförelser med riket.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
+/* Fonts are served from the site itself (fonts/, from Fontsource; SIL Open Font License), so no visitor data goes to a font service. */
+@font-face { font-family: "Bricolage Grotesque"; font-style: normal; font-display: swap; font-weight: 200 800; src: url(fonts/bricolage-grotesque-latin-opsz-normal.woff2) format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-style: normal; font-display: swap; font-weight: 400; src: url(fonts/ibm-plex-sans-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-style: normal; font-display: swap; font-weight: 500; src: url(fonts/ibm-plex-sans-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-style: normal; font-display: swap; font-weight: 600; src: url(fonts/ibm-plex-sans-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-display: swap; font-weight: 400; src: url(fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-display: swap; font-weight: 500; src: url(fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2"); }
 /* Layout: a control + detail column on the left; the main area switches between map, sortable list, and "most like Sweden" (ranking + map). Stacks on phones. */
 :root {
   --bg: #f3f4f1;
@@ -433,8 +437,8 @@ table.predtable td.r.bad { color: var(--ink); font-weight: 600; }
   </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="vendor/maplibre-gl-4.7.1.js"></script>
+<script src="vendor/topojson-client-3.1.0.min.js"></script>
 <script>
 (() => {
 "use strict";
@@ -570,7 +574,8 @@ const T = {
     err_lib: "Kartbiblioteket kunde inte laddas. Kontrollera anslutningen och ladda om sidan.",
     err_data: "Kunde inte ladda data ({s}).",
     sources: "Källor", src_text: "Valresultat: Valmyndigheten, <a href=\"https://resultat.val.se/val2026/RD?r=S\" target=\"_blank\" rel=\"noopener\">resultat.val.se</a> (2022, 2026) och <a href=\"https://historik.val.se/\" target=\"_blank\" rel=\"noopener\">historik.val.se</a> (2010–2018). Statistik: <a href=\"https://www.statistikdatabasen.scb.se/\" target=\"_blank\" rel=\"noopener\">SCB:s statistikdatabas</a> och SCB:s geodata (DeSO 2025, befolkning per km-ruta 2025).",
-    src_note: "Distriktens andelar räknas utan centralt räknade röster (uppsamlingsdistrikt); kommun-, läns- och riksresultat innehåller dem. Täthet räknas på hela områdets yta, sjöar inräknade. I region- och kommunvalen jämförs med summan av alla regioner respektive kommuner, och lokala partier ingår i Övriga men visas med namn. Gruppen M+KD+L+SD mot S+V+MP+C följer 2022–2026 års politiska läge och används för alla år för jämförbarhetens skull.",
+    src_note: "Distriktens andelar räknas utan centralt räknade röster (uppsamlingsdistrikt); kommun-, läns- och riksresultat innehåller dem. Befolkningstäthet räknas per km² land (SCB:s landareal); för valdistrikt är landarealen uppskattad. I region- och kommunvalen jämförs med summan av alla regioner respektive kommuner, och lokala partier ingår i Övriga men visas med namn. Grupperna (förvalt M+KD+L+SD mot S+V+MP+C) kan ändras under röstfördelningen och gäller alla år.",
+    priv_head: "Integritet", priv_text: "Sidan sätter inga kakor och samlar inte in några uppgifter om dig. Typsnitt och kartbibliotek hämtas från samma server som sidan. Ditt val av språk sparas i din webbläsare (localStorage) och lämnar aldrig din dator. Om du slår på bakgrundskartan hämtas kartbilder från OpenStreetMap, som då ser din IP-adress. Som alla webbservrar kan servern som visar sidan föra vanliga åtkomstloggar.",
     biggest_dev: "Störst avvikelse", above: "över", below: "under",
   },
   en: {
@@ -701,7 +706,8 @@ const T = {
     err_lib: "The map library did not load. Check the connection and reload the page.",
     err_data: "Could not load data ({s}).",
     sources: "Sources", src_text: "Results: Valmyndigheten, <a href=\"https://resultat.val.se/val2026/RD?r=S\" target=\"_blank\" rel=\"noopener\">resultat.val.se</a> (2022, 2026) and <a href=\"https://historik.val.se/\" target=\"_blank\" rel=\"noopener\">historik.val.se</a> (2010–2018). Statistics: <a href=\"https://www.statistikdatabasen.scb.se/\" target=\"_blank\" rel=\"noopener\">SCB Statistikdatabasen</a> and SCB geodata (DeSO 2025, 1 km population grid 2025).",
-    src_note: "District shares exclude centrally counted votes (uppsamlingsdistrikt); municipal, county and national results include them. Density uses each area's total extent, lakes included. In regional and municipal elections, Sweden means the sum of all regions or municipalities, and local parties are counted in Övriga but listed by name. The M+KD+L+SD vs S+V+MP+C grouping reflects 2022–2026 politics and is applied to every year for comparability.",
+    src_note: "District shares exclude centrally counted votes (uppsamlingsdistrikt); municipal, county and national results include them. Population density is per km² of land (SCB's land area); for voting districts the land area is estimated. In regional and municipal elections, Sweden means the sum of all regions or municipalities, and local parties are counted in Övriga but listed by name. The groups (by default M+KD+L+SD vs S+V+MP+C) can be changed under the vote shares and apply to every year.",
+    priv_head: "Privacy", priv_text: "This page sets no cookies and collects no information about you. Fonts and map libraries are loaded from the same server as the page. Your language choice is saved in your browser (localStorage) and never leaves your computer. If you switch on the background map, map images are loaded from OpenStreetMap, which then sees your IP address. Like any web server, the server hosting the page may keep ordinary access logs.",
     biggest_dev: "Largest deviations", above: "above", below: "below",
   }
 };
@@ -1360,7 +1366,7 @@ function renderDetail() {
       <select id="scY" aria-label="${esc(t("y_axis"))}">${META.parties.filter((p) => p.k !== "ÖVR").map((p) => `<option value="${p.k}" ${p.k === state.scY ? "selected" : ""}>${esc(t("share_axis", { k: p.k }))}</option>`).join("")}<option value="_turnout" ${state.scY === "_turnout" ? "selected" : ""}>${esc(t("turnout"))}</option></select>
       <select id="scX" aria-label="${esc(t("x_axis"))}">${META.stats.map((d) => `<option value="${d.k}" ${d.k === state.scX ? "selected" : ""}>${esc(statName(d))}</option>`).join("")}</select>
     </div><canvas id="scatter"></canvas><p class="note" id="scnote"></p></div>`;
-  body += `<div class="about"><p><b>${esc(t("sources"))}.</b> ${t("src_text")}</p><p>${esc(t("src_note"))}</p></div>`;
+  body += `<div class="about"><p><b>${esc(t("sources"))}.</b> ${t("src_text")}</p><p>${esc(t("src_note"))}</p><p><b>${esc(t("priv_head"))}.</b> ${esc(t("priv_text"))}</p></div>`;
 
   el.innerHTML = `<div>${crumbs}<div class="area-kind">${esc(kind)}${lvl === "kommun" ? " · " + esc(t("n_vd", { n: Object.values(byId.vd).filter((f) => f.properties.k === id).length })) : ""}</div><h2 class="area-name">${esc(lvl === "riket" ? t("sweden") : areaName(lvl, id))}</h2></div>${body}`;
   el.querySelectorAll("[data-sel]").forEach((b) => b.addEventListener("click", () => {
