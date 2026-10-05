@@ -1,5 +1,5 @@
 <title>Valkartan</title>
-<meta name="description" content="Riksdags-, region- och kommunvalen 2010–2026 på karta och i listor, per län, kommun och valdistrikt, med SCB-statistik och jämförelser med riket.">
+<meta name="description" content="Riksdags-, region- och kommunvalen 2006–2026 på karta och i listor, per län, kommun och valdistrikt, med SCB-statistik och jämförelser med riket.">
 <style>
 /* Fonts are served from the site itself (fonts/, from Fontsource; SIL Open Font License), so no visitor data goes to a font service. */
 @font-face { font-family: "Bricolage Grotesque"; font-style: normal; font-display: swap; font-weight: 200 800; src: url(fonts/bricolage-grotesque-latin-opsz-normal.woff2) format("woff2"); }
@@ -252,6 +252,11 @@ table.predtable td.r.bad { color: var(--ink); font-weight: 600; }
 .seatsum .nn { color: var(--ink-3); }
 .grpdet { margin-top: 8px; font-size: 12.5px; }
 .allp { margin-top: 8px; font-size: 12.5px; }
+#yearmore { margin-top: 6px; }
+#yearmore .linkbtn { border: 0; background: none; padding: 2px 0; color: var(--ink-2); font: inherit; font-size: 12.5px; cursor: pointer; }
+#yearmore .linkbtn:hover { color: var(--ink); text-decoration: underline; }
+#yearmore .oldyears { margin-top: 6px; grid-auto-flow: row; grid-template-columns: repeat(5, 1fr); }
+#level button:disabled, #tabs button:disabled, #cartobtn:disabled { opacity: .4; cursor: not-allowed; }
 .allp summary { cursor: pointer; color: var(--ink-2); }
 .allp-list { margin-top: 6px; display: grid; gap: 2px; max-height: 340px; overflow-y: auto; padding-right: 4px; }
 .allp-list .orow { border-left-color: var(--line-strong); }
@@ -470,7 +475,7 @@ table.predtable td.r.bad { color: var(--ink); font-weight: 600; }
 // ======================================================================
 const T = {
   sv: {
-    subtitle: "Riksdags-, region- och kommunval 2010–2026 per län, kommun och valdistrikt.",
+    subtitle: "Riksdags-, region- och kommunval 2006–2026 per län, kommun och valdistrikt – och sedan 1973 per kommun.",
     election: "År", areas: "Områden", colour_by: "Färglägg kartan efter", party: "Parti",
     lvl_lan_p: "Län", lvl_kommun_p: "Kommuner", lvl_vd_p: "Valdistrikt", lvl_vk_p: "Valkretsar",
     lvl_lan: "Län", lvl_kommun: "Kommun", lvl_vd: "Valdistrikt", lvl_riket: "Hela landet", lvl_vk: "Riksdagsvalkrets",
@@ -483,7 +488,7 @@ const T = {
     seats_head: "Mandat i riksdagen {y}", seats_head_live: "Mandat med rösterna räknade hittills", seats_n: "Mandat", seats_split: "Fasta+utj.", seats_up: "+1 mandat med", seats_down: "−1 mandat med",
     seat_from: "från {p}", seat_to: "till {p}", vk_head: "Mandat från valkretsen", vk_head_note: "riksdagsvalet {y}",
     vk_seats: "{n} mandat: {f} fasta + {u} utjämning",
-    seats_note: "Räknat som i vallagen: fasta mandat per riksdagsvalkrets, fördelning i hela landet och 39 utjämningsmandat; ger exakt det officiella utfallet 2010–2026. +1/−1: hur många fler eller färre röster partiet hade behövt (fördelade som dess egna, övriga partier oförändrade) för att få ett mandat mer eller mindre, och vilket parti mandatet hade kommit från eller gått till. Partier under 4 % visar hur många röster som fattades till spärren.",
+    seats_note: "Räknat som i vallagen: fasta mandat per riksdagsvalkrets, fördelning i hela landet och 39 utjämningsmandat; ger exakt det officiella utfallet 2006–2026. +1/−1: hur många fler eller färre röster partiet hade behövt (fördelade som dess egna, övriga partier oförändrade) för att få ett mandat mer eller mindre, och vilket parti mandatet hade kommit från eller gått till. Partier under 4 % visar hur många röster som fattades till spärren.",
     pr_close: "Närmast ett mandat", pr_close_up: "{p} +1 med {v} fler röster (från {o})", pr_close_down: "{p} −1 med {v} färre (till {o})",
     pr_method: "Metod", pr_m_uniform: "Enhetlig", pr_m_local: "Lokal", pr_m_similar: "Liknande", pr_m_combined: "Kombinerad",
     pr_order_live: "Rapporterat hittills", pr_counted_so_far: "Räknat hittills",
@@ -511,7 +516,7 @@ const T = {
       "Antalet röster i ej rapporterade distrikt skattas som röstberättigade (känt före valet) gånger förra valets valdeltagande plus förändringen hittills. Därtill kommer de röster som räknas centralt först efter valnatten (sent inkomna förtidsröster, röster från utlandet m.m., 5 % av rösterna 2026): de antas utgöra lika stor del som förra valet och fördela sig som då, plus den nationella svängningen.",
       "± är ett ungefärligt 95-procentsintervall med två delar. Den första: de rapporterade distrikten dras om slumpmässigt (bootstrap) och prognosen räknas om, vilket visar hur mycket den beror på just de distrikten. Den andra tar hänsyn till att rapporteringsordningen inte är slumpmässig: samma metod, ordning och andel rapporterade körs på förra valet, och felet där läggs till. Med \"minsta först\" blir intervallet därför bredare tidigt under kvällen.",
       "<b>Egen</b> ordning: klicka på distrikt i kartan för att markera dem som rapporterade (skift-klick markerar hela kommunen). Bra för att se vad några få distrikt säger om helheten.",
-      "Facit är det officiella slutresultatet, inklusive de centralt räknade rösterna, och den officiella mandatfördelningen. Därför blir prognosen inte exakt rätt ens när alla distrikt rapporterat – precis som på en riktig valnatt. Prognosens mandat räknas som i vallagen på de prognostiserade rösterna per riksdagsvalkrets: fasta valkretsmandat, fördelning i hela landet och 39 utjämningsmandat (jämkade uddatalsmetoden, första divisor 1,2, före 2018 1,4; 4-procentsspärren). På det slutliga resultatet ger det exakt den officiella fördelningen alla år 2010–2026. \"Närmast ett mandat\" visar de partier som var närmast att vinna eller förlora ett mandat i prognosen."
+      "Facit är det officiella slutresultatet, inklusive de centralt räknade rösterna, och den officiella mandatfördelningen. Därför blir prognosen inte exakt rätt ens när alla distrikt rapporterat – precis som på en riktig valnatt. Prognosens mandat räknas som i vallagen på de prognostiserade rösterna per riksdagsvalkrets: fasta valkretsmandat, fördelning i hela landet och 39 utjämningsmandat (jämkade uddatalsmetoden, första divisor 1,2, före 2018 1,4; 4-procentsspärren). På det slutliga resultatet ger det exakt den officiella fördelningen alla år 2006–2026. \"Närmast ett mandat\" visar de partier som var närmast att vinna eller förlora ett mandat i prognosen."
     ],
     odd_title: "Udda distrikt", odd_pick: "Visa", odd_g_shape: "Form och gränser", odd_g_vote: "Valresultat", odd_g_size: "Storlek",
     odd_only_vd: "Gäller valdistrikt – visar valdistrikten.", odd_legend: "Markerade: de {n} första i listan", odd_none: "Inga områden uppfyller det här.",
@@ -542,7 +547,14 @@ const T = {
     m_bloc: "{b} mot {a}", m_turnout: "Valdeltagande", m_turnoutchg: "Förändring i valdeltagande sedan {p}",
     m_simvote: "Röstlikhet med riket", m_simdemo: "Befolkningslikhet med riket",
     share_of: "{n} ({k}), andel av rösterna", change_of: "{n} ({k}), förändring sedan {p}",
-    turnout: "Valdeltagande", eligible: "Röstberättigade", votes_cast: "Avgivna röster", blank: "blanka",
+    turnout: "Valdeltagande", eligible: "Röstberättigade", votes_cast: "Avgivna röster", blank: "blanka", invalid: "ogiltiga (inkl. blanka)",
+    old_more: "Äldre val", old_less: "Färre val", old_title: "Val 1973–2002 per kommun och län (SCB)",
+    old_note: "Äldre val ({y}): bara län och kommuner, från SCB. Kommuner som bildats senare visas ihop med kommunen de då var en del av, och gränserna är dagens.",
+    old_sd: "Sverigedemokraterna redovisas inte för sig i SCB:s tabell för det här valet; rösterna ingår i övriga partier.",
+    old_nyd: "Ny demokrati ingår i övriga partier (1991: 6,7 % och 25 mandat).", old_kd85: "1985 gick KD till val på Centerpartiets lista; rösterna räknas till C.", old_rf: "Göteborg, Malmö och Gotland hörde inte till något landsting och saknar därför landstingsval.",
+    old_merged: "{y} ingick {k} i {p}.", old_merged_in: "I {y} års siffror ingår även {k}, som då var en del av {p}.",
+    old_seats: "Officiell mandatfördelning (SCB).", old_seats_other: "Därtill {p}: {n} mandat.", old_seats_350: "Riksdagen hade 350 mandat 1973 (349 från 1976).",
+    old_unavail: "Finns inte för äldre val (bara län och kommuner).", pred_unavail: "Valvakan behöver distriktsresultat från förra valet, och de finns först från 2006.", all_missing_note_old: "SCB:s tabeller för {y} redovisar bara riksdagspartierna var för sig; övriga partier finns bara som en summa.",
     vs: "mot {p}", pp: "p.e.", vote_share: "Röstfördelning riksdagsval {y}",
     vote_share_RD: "Röstfördelning riksdagsval {y}", vote_share_RF: "Röstfördelning regionval {y}", vote_share_KF: "Röstfördelning kommunval {y}",
     etype: "Valtyp", et_RD: "Riksdag", et_RF: "Region", et_KF: "Kommun",
@@ -581,10 +593,10 @@ const T = {
     osm_attr: "© OpenStreetMap-bidragsgivare",
     sim_head: "Likhet med riket", sim_vote: "Röstning", sim_demo: "Befolkning", sim_vote_lbl: "Röstavvikelse", sim_demo_lbl: "Befolkningsavvikelse",
     rank_of: "plats {r} av {n}", most_like: "Mest lik", least_like: "Minst lik",
-    avg_all: "Snitt för alla val 2010–2026",
-    sim_title_vote: "Röstade mest som Sverige ({y})", sim_title_vote_avg: "Röstade mest som Sverige, snitt 2010–2026",
+    avg_all: "Snitt för alla val 2006–2026",
+    sim_title_vote: "Röstade mest som Sverige ({y})", sim_title_vote_avg: "Röstade mest som Sverige, snitt 2006–2026",
     sim_title_demo: "Befolkning mest lik Sverige",
-    sim_title_vote_least: "Röstade minst som Sverige ({y})", sim_title_vote_avg_least: "Röstade minst som Sverige, snitt 2010–2026",
+    sim_title_vote_least: "Röstade minst som Sverige ({y})", sim_title_vote_avg_least: "Röstade minst som Sverige, snitt 2006–2026",
     sim_title_demo_least: "Befolkning minst lik Sverige",
     method: "Så räknas det",
     method_vote: [
@@ -611,13 +623,13 @@ const T = {
     loading: "Laddar karta och valresultat…", loading_year: "Laddar valet {y}…",
     err_lib: "Kartbiblioteket kunde inte laddas. Kontrollera anslutningen och ladda om sidan.",
     err_data: "Kunde inte ladda data ({s}).",
-    sources: "Källor", src_text: "Valresultat: Valmyndigheten, <a href=\"https://resultat.val.se/val2026/RD?r=S\" target=\"_blank\" rel=\"noopener\">resultat.val.se</a> (2022, 2026) och <a href=\"https://historik.val.se/\" target=\"_blank\" rel=\"noopener\">historik.val.se</a> (2010–2018). Statistik: <a href=\"https://www.statistikdatabasen.scb.se/\" target=\"_blank\" rel=\"noopener\">SCB:s statistikdatabas</a> och SCB:s geodata (DeSO 2025, befolkning per km-ruta 2025).",
+    sources: "Källor", src_text: "Valresultat: Valmyndigheten, <a href=\"https://resultat.val.se/val2026/RD?r=S\" target=\"_blank\" rel=\"noopener\">resultat.val.se</a> (2022, 2026) och <a href=\"https://historik.val.se/\" target=\"_blank\" rel=\"noopener\">historik.val.se</a> (2006–2018); äldre val på kommunnivå från SCB. Statistik: <a href=\"https://www.statistikdatabasen.scb.se/\" target=\"_blank\" rel=\"noopener\">SCB:s statistikdatabas</a> och SCB:s geodata (DeSO 2025, befolkning per km-ruta 2025).",
     src_note: "Distriktens andelar räknas utan centralt räknade röster (uppsamlingsdistrikt); kommun-, läns- och riksresultat innehåller dem. Befolkningstäthet räknas per km² land (SCB:s landareal); för valdistrikt är landarealen uppskattad. I region- och kommunvalen jämförs med summan av alla regioner respektive kommuner, och lokala partier ingår i Övriga men visas med namn. Grupperna (förvalt M+KD+L+SD mot S+V+MP+C) kan ändras under röstfördelningen och gäller alla år.",
     priv_head: "Integritet", priv_text: "Sidan sätter inga kakor och samlar inte in några uppgifter om dig. Typsnitt och kartbibliotek hämtas från samma server som sidan. Ditt val av språk sparas i din webbläsare (localStorage) och lämnar aldrig din dator. Om du slår på bakgrundskartan hämtas kartbilder från OpenStreetMap, som då ser din IP-adress. Som alla webbservrar kan servern som visar sidan föra vanliga åtkomstloggar.",
     biggest_dev: "Störst avvikelse", above: "över", below: "under",
   },
   en: {
-    subtitle: "Riksdag, regional and municipal elections 2010–2026 by county, municipality and voting district.",
+    subtitle: "Riksdag, regional and municipal elections 2006–2026 by county, municipality and voting district – and since 1973 by municipality.",
     election: "Year", areas: "Areas", colour_by: "Colour map by", party: "Party",
     lvl_lan_p: "Counties", lvl_kommun_p: "Municipalities", lvl_vd_p: "Districts", lvl_vk_p: "Constituencies",
     lvl_lan: "County", lvl_kommun: "Municipality", lvl_vd: "Voting district", lvl_riket: "Whole country", lvl_vk: "Riksdag constituency",
@@ -630,7 +642,7 @@ const T = {
     seats_head: "Riksdag seats {y}", seats_head_live: "Seats on the votes counted so far", seats_n: "Seats", seats_split: "Fixed+adj.", seats_up: "+1 seat with", seats_down: "−1 seat with",
     seat_from: "from {p}", seat_to: "to {p}", vk_head: "Seats from the constituency", vk_head_note: "Riksdag election {y}",
     vk_seats: "{n} seats: {f} fixed + {u} adjustment",
-    seats_note: "Counted as in the election law: fixed seats per Riksdag constituency, a national distribution and 39 adjustment seats; this gives exactly the official result for 2010–2026. +1/−1: how many more or fewer votes the party would have needed (spread like its own, other parties unchanged) to win one seat more or one fewer, and which party the seat would have come from or gone to. For parties under 4%, it shows how many votes they were short of the threshold.",
+    seats_note: "Counted as in the election law: fixed seats per Riksdag constituency, a national distribution and 39 adjustment seats; this gives exactly the official result for 2006–2026. +1/−1: how many more or fewer votes the party would have needed (spread like its own, other parties unchanged) to win one seat more or one fewer, and which party the seat would have come from or gone to. For parties under 4%, it shows how many votes they were short of the threshold.",
     pr_close: "Closest to a seat", pr_close_up: "{p} +1 with {v} more votes (from {o})", pr_close_down: "{p} −1 with {v} fewer (to {o})",
     pr_method: "Method", pr_m_uniform: "Uniform", pr_m_local: "Local", pr_m_similar: "Similar", pr_m_combined: "Combined",
     pr_order_live: "Reported so far", pr_counted_so_far: "Counted so far",
@@ -689,7 +701,14 @@ const T = {
     m_bloc: "{b} vs {a}", m_turnout: "Turnout", m_turnoutchg: "Turnout change since {p}",
     m_simvote: "Voting similarity to Sweden", m_simdemo: "Population similarity to Sweden",
     share_of: "{n} ({k}), share of votes", change_of: "{n} ({k}), change since {p}",
-    turnout: "Turnout", eligible: "Eligible voters", votes_cast: "Votes cast", blank: "blank",
+    turnout: "Turnout", eligible: "Eligible voters", votes_cast: "Votes cast", blank: "blank", invalid: "invalid (incl. blank)",
+    old_more: "Older elections", old_less: "Fewer elections", old_title: "Elections 1973–2002 by municipality and county (SCB)",
+    old_note: "Older election ({y}): counties and municipalities only, from SCB. Municipalities formed later are shown together with the one they were part of, on today's borders.",
+    old_sd: "SCB's table does not report the Sweden Democrats separately for this election; their votes are among the other parties.",
+    old_nyd: "New Democracy is among the other parties (1991: 6.7% and 25 seats).", old_kd85: "In 1985 KD stood on the Centre Party's list; its votes count as C.", old_rf: "Gothenburg, Malmö and Gotland were not part of any county council, so they had no county council election.",
+    old_merged: "In {y}, {k} was part of {p}.", old_merged_in: "The {y} figures also include {k}, then part of {p}.",
+    old_seats: "Official seat distribution (SCB).", old_seats_other: "Also {p}: {n} seats.", old_seats_350: "The Riksdag had 350 seats in 1973 (349 from 1976).",
+    old_unavail: "Not available for older elections (counties and municipalities only).", pred_unavail: "The forecast needs district results from the previous election, which exist only from 2006.", all_missing_note_old: "SCB's tables for {y} list only the Riksdag parties separately; other parties are given only as a total.",
     vs: "vs {p}", pp: "pp", vote_share: "Riksdag vote share {y}",
     vote_share_RD: "Riksdag vote share {y}", vote_share_RF: "Regional council vote share {y}", vote_share_KF: "Municipal council vote share {y}",
     etype: "Election", et_RD: "Riksdag", et_RF: "Region", et_KF: "Municipality",
@@ -728,10 +747,10 @@ const T = {
     osm_attr: "© OpenStreetMap contributors",
     sim_head: "Similarity to Sweden", sim_vote: "Voting", sim_demo: "Population", sim_vote_lbl: "Voting deviation", sim_demo_lbl: "Population deviation",
     rank_of: "rank {r} of {n}", most_like: "Most alike", least_like: "Least alike",
-    avg_all: "Average over all elections 2010–2026",
-    sim_title_vote: "Voted most like Sweden ({y})", sim_title_vote_avg: "Voted most like Sweden, 2010–2026 average",
+    avg_all: "Average over all elections 2006–2026",
+    sim_title_vote: "Voted most like Sweden ({y})", sim_title_vote_avg: "Voted most like Sweden, 2006–2026 average",
     sim_title_demo: "Population most like Sweden",
-    sim_title_vote_least: "Voted least like Sweden ({y})", sim_title_vote_avg_least: "Voted least like Sweden, 2010–2026 average",
+    sim_title_vote_least: "Voted least like Sweden ({y})", sim_title_vote_avg_least: "Voted least like Sweden, 2006–2026 average",
     sim_title_demo_least: "Population least like Sweden",
     method: "How it is calculated",
     method_vote: [
@@ -758,7 +777,7 @@ const T = {
     loading: "Loading map and results…", loading_year: "Loading the {y} election…",
     err_lib: "The map library did not load. Check the connection and reload the page.",
     err_data: "Could not load data ({s}).",
-    sources: "Sources", src_text: "Results: Valmyndigheten, <a href=\"https://resultat.val.se/val2026/RD?r=S\" target=\"_blank\" rel=\"noopener\">resultat.val.se</a> (2022, 2026) and <a href=\"https://historik.val.se/\" target=\"_blank\" rel=\"noopener\">historik.val.se</a> (2010–2018). Statistics: <a href=\"https://www.statistikdatabasen.scb.se/\" target=\"_blank\" rel=\"noopener\">SCB Statistikdatabasen</a> and SCB geodata (DeSO 2025, 1 km population grid 2025).",
+    sources: "Sources", src_text: "Results: Valmyndigheten, <a href=\"https://resultat.val.se/val2026/RD?r=S\" target=\"_blank\" rel=\"noopener\">resultat.val.se</a> (2022, 2026) and <a href=\"https://historik.val.se/\" target=\"_blank\" rel=\"noopener\">historik.val.se</a> (2006–2018); older elections at municipality level from SCB. Statistics: <a href=\"https://www.statistikdatabasen.scb.se/\" target=\"_blank\" rel=\"noopener\">SCB Statistikdatabasen</a> and SCB geodata (DeSO 2025, 1 km population grid 2025).",
     src_note: "District shares exclude centrally counted votes (uppsamlingsdistrikt); municipal, county and national results include them. Population density is per km² of land (SCB's land area); for voting districts the land area is estimated. In regional and municipal elections, Sweden means the sum of all regions or municipalities, and local parties are counted in Övriga but listed by name. The groups (by default M+KD+L+SD vs S+V+MP+C) can be changed under the vote shares and apply to every year.",
     priv_head: "Privacy", priv_text: "This page sets no cookies and collects no information about you. Fonts and map libraries are loaded from the same server as the page. Your language choice is saved in your browser (localStorage) and never leaves your computer. If you switch on the background map, map images are loaded from OpenStreetMap, which then sees your IP address. Like any web server, the server hosting the page may keep ordinary access logs.",
     biggest_dev: "Largest deviations", above: "above", below: "below",
@@ -797,6 +816,13 @@ const state = { year: 2026, view: "map", level: "kommun", mode: "winner", party:
 const ET = ["RD", "RF", "KF"];
 const rkey = (y, et = state.et) => et === "RD" ? String(y) : `${y}_${et}`;
 const typeYears = (et = state.et) => (META.types && META.types[et]) || META.years;
+// 1973–2002: results per municipality only (SCB), shown behind the "Äldre val" button
+const isOld = (y = state.year) => (META.old_years || []).includes(+y);
+const mainYears = (et = state.et) => typeYears(et).filter((y) => !isOld(y));
+const levelOK = (l, y = state.year) => !isOld(y) || l === "lan" || l === "kommun";
+// the forecast needs district results from the previous election too (so not 2006, whose previous election is 2002)
+const predOK = (y = state.year) => { const ys = typeYears().filter((x) => x < y); return !isOld(y) && ys.length > 0 && !isOld(Math.max(...ys)); };
+let showOld = false;
 let META, ST, PI = {}, RES = {}, GEO26, map, mapReady = false, byId = { lan: {}, kommun: {}, vd: {} }, GEOY = {}, hoverId = null, scale = null;
 const $ = (s) => document.querySelector(s);
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -928,7 +954,7 @@ function simVote(level, id) {
 }
 function simVoteAvg(level, id) {
   let s = 0, n = 0;
-  for (const y of typeYears()) { const rr = RES[rkey(y)]; if (!rr) continue; const d = dissim(rec(level, id, y), rr.riket); if (d != null) { s += d; n++; } }
+  for (const y of mainYears()) { const rr = RES[rkey(y)]; if (!rr) continue; const d = dissim(rec(level, id, y), rr.riket); if (d != null) { s += d; n++; } }
   return n ? s / n : null;
 }
 // --- similarity: demographics (RMS of standardised differences) ---
@@ -1070,10 +1096,28 @@ function buildScale() {
 // ======================================================================
 // Map
 // ======================================================================
+const EMPTY_FC = () => ({ type: "FeatureCollection", features: [] });
 function topoToFC(topo, obj, idKey) {
   const g = topojson.feature(topo, topo.objects[obj]);
   g.features.forEach((f) => { f.properties.id = f.properties[idKey]; f.bbox = bbox(f.geometry); });
   return g;
+}
+// Older elections: today's municipalities and counties, with a municipality that did not exist yet merged into the
+// one it was part of (shared arcs, so the outer border is exact). No voting districts.
+function oldTopo(y, merged) {
+  const geoms = GEO26.objects.kommun.geometries, by = {};
+  for (const g of geoms) by[g.properties.k] = g;
+  const kids = {};
+  for (const [c, p] of Object.entries(merged)) (kids[p] ||= []).push(c);
+  const out = [];
+  for (const g of geoms) {
+    const k = g.properties.k;
+    if (merged[k]) continue;
+    if (!kids[k]) { out.push(g); continue; }
+    const m = topojson.mergeArcs(GEO26, [g, ...kids[k].map((c) => by[c]).filter(Boolean)]);
+    out.push({ ...m, properties: { ...g.properties } });
+  }
+  return { ...GEO26, objects: { vd: { type: "GeometryCollection", geometries: [] }, kommun: { type: "GeometryCollection", geometries: out }, lan: GEO26.objects.lan } };
 }
 // Riksdag constituencies: merge each year's municipality shapes (shared arcs, so borders line up exactly)
 function vkFeatures(topo, y) {
@@ -1530,6 +1574,8 @@ function applyParsed(o) {
   state.op = o.op != null && o.op >= 0 && o.op <= 100 ? o.op : 100;
   if (o.lang) lang = o.lang;
   state.sel = o.sel && ["lan", "vk", "kommun", "vd"].includes(o.sel.lvl) && o.sel.id ? o.sel : null;
+  yearLimits(state.year);
+  if (state.sel && !levelOK(state.sel.lvl)) state.sel = null;
 }
 let hashTimer = null, lastHash = "";
 function writeHash() {
@@ -1622,6 +1668,14 @@ function renderLegend() {
   if (mode === "bloc") notes.push(t("bloc_note"));
   if (state.osm && osmFailed) notes.push(t("osm_failed"));
   notes.push(t("proj_" + geomMode()));
+  if (isOld()) {
+    notes.push(t("old_note", { y: state.year }));
+    const na = R().na || [];
+    if (na.includes("SD") && state.year >= 1988 && (mode === "winner" || (mode === "share" || mode === "change") && state.party === "SD")) notes.push(t("old_sd"));
+    if ((state.year === 1991 || state.year === 1994) && mode === "winner") notes.push(t("old_nyd"));
+    if (state.et === "RF" && state.year < 1998) notes.push(t("old_rf"));
+    if (na.includes("KD") && (mode === "winner" || state.party === "KD" || state.party === "C")) notes.push(t("old_kd85"));
+  }
   if (LITE) notes.push(t("lite_note"));
   if (notes.length) h += `<div class="s">${notes.map(esc).join(" ")}</div>`;
   el.innerHTML = h;
@@ -1720,7 +1774,7 @@ async function loadYear(y) {
   if (!RES[k]) RES[k] = await getJSON(`data/results_${k}.json${LIVE?.year === y ? liveBust() : ""}`);
   // each election has its own districts; municipality and county borders are dissolved from them so lines match.
   // The shapes are built from the topology when first needed, in the projection in use (see GEO()).
-  if (!GEOT[y]) GEOT[y] = y === 2026 ? GEO26 : await getJSON(`data/geo_vd_${y}.json`);
+  if (!GEOT[y]) GEOT[y] = y === 2026 ? GEO26 : isOld(y) ? oldTopo(y, RES[k].merged || {}) : await getJSON(`data/geo_vd_${y}.json`);
   if (state.carto) await loadCarto(y);
 }
 
@@ -1862,11 +1916,11 @@ function geomMode() { return state.carto ? "carto" : state.osm ? "merc" : "swere
 function GEO(y) {
   const m = geomMode();
   if (m === "merc") {
-    if (!GEOY[y]) { const tp = GEOT[y]; GEOY[y] = { vd: topoToFC(tp, "vd", "id"), kommun: topoToFC(tp, "kommun", "k"), lan: topoToFC(tp, "lan", "l"), vk: vkFeatures(tp, y) }; }
+    if (!GEOY[y]) { const tp = GEOT[y]; GEOY[y] = { vd: topoToFC(tp, "vd", "id"), kommun: topoToFC(tp, "kommun", "k"), lan: topoToFC(tp, "lan", "l"), vk: isOld(y) ? EMPTY_FC() : vkFeatures(tp, y) }; }
     return GEOY[y];
   }
   if (m === "sweref") {
-    if (!GEOS[y]) { const tp = projectTopo(GEOT[y]); GEOS[y] = { vd: topoToFC(tp, "vd", "id"), kommun: topoToFC(tp, "kommun", "k"), lan: topoToFC(tp, "lan", "l"), vk: vkFeatures(tp, y) }; }
+    if (!GEOS[y]) { const tp = projectTopo(GEOT[y]); GEOS[y] = { vd: topoToFC(tp, "vd", "id"), kommun: topoToFC(tp, "kommun", "k"), lan: topoToFC(tp, "lan", "l"), vk: isOld(y) ? EMPTY_FC() : vkFeatures(tp, y) }; }
     return GEOS[y];
   }
   if (!GEOC[y]) GEOC[y] = Object.fromEntries(LEVELS.map((l) => [l, cartoFC(y, l)]));
@@ -1943,7 +1997,7 @@ async function setCarto(on) {
     setTimeout(() => done?.(), 1500);
   }
 }
-async function loadAllYears() { await Promise.all(typeYears().map((y) => { const k = rkey(y); return RES[k] ? null : getJSON(`data/results_${k}.json`).then((d) => { RES[k] = d; }); })); }
+async function loadAllYears() { await Promise.all(mainYears().map((y) => { const k = rkey(y); return RES[k] ? null : getJSON(`data/results_${k}.json`).then((d) => { RES[k] = d; }); })); }
 async function setEt(et) {
   if (et === state.et) return;
   state.et = et;
@@ -1959,20 +2013,55 @@ function updateBallot() {
   document.querySelectorAll("#etype button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.et === state.et));
 }
 function renderYearButtons() {
-  const ys = typeYears();
-  $("#year").innerHTML = META.years.slice().reverse().map((y) => `<button type="button" data-y="${y}" aria-pressed="${y === state.year}" ${ys.includes(y) ? "" : "disabled"}>${y}</button>`).join("");
+  const ys = typeYears(), old = (META.old_years || []).slice().reverse();
+  const btn = (y) => `<button type="button" data-y="${y}" aria-pressed="${y === state.year}" ${ys.includes(y) ? "" : "disabled"}>${y}</button>`;
+  if (isOld()) showOld = true;
+  $("#year").innerHTML = META.years.filter((y) => !isOld(y)).reverse().map(btn).join("");
+  let more = $("#yearmore");
+  if (!more && old.length) {
+    more = document.createElement("div"); more.id = "yearmore";
+    $("#year").insertAdjacentElement("afterend", more);
+    more.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-y]"); if (b) { if (+b.dataset.y !== state.year) setYear(+b.dataset.y); return; }
+      if (e.target.closest("#oldtoggle")) { showOld = !showOld || isOld(); renderYearButtons(); }
+    });
+  }
+  if (more) more.innerHTML = `<button type="button" id="oldtoggle" class="linkbtn" aria-expanded="${showOld}">${esc(t(showOld && !isOld() ? "old_less" : "old_more"))} <span aria-hidden="true">${showOld ? "▴" : "▾"}</span></button>
+    ${showOld ? `<div class="seg oldyears" role="group" aria-label="${esc(t("old_title"))}" title="${esc(t("old_title"))}">${old.map(btn).join("")}</div>` : ""}`;
+}
+// older elections have only counties and municipalities: no districts, constituencies, cartogram, odd districts or forecast
+function yearLimits(y) {
+  if (state.view === "pred" && !predOK(y)) state.view = "map";
+  if (!isOld(y)) return;
+  if (!levelOK(state.level, y)) state.level = "kommun";
+  if (state.view === "odd" || state.view === "pred") state.view = "map";
+  state.carto = false;
+  showOld = true;
+}
+function updateYearControls() {
+  const old = isOld();
+  document.querySelectorAll("#level button").forEach((b) => { b.disabled = !levelOK(b.dataset.level); b.title = b.disabled ? t("old_unavail") : ""; });
+  document.querySelectorAll('#tabs button[data-view="odd"]').forEach((b) => { b.disabled = old; b.title = old ? t("old_unavail") : ""; });
+  document.querySelectorAll('#tabs button[data-view="pred"]').forEach((b) => { b.disabled = !predOK(); b.title = old ? t("old_unavail") : !predOK() ? t("pred_unavail") : ""; });
+  const cb = $("#cartobtn"); if (cb) { cb.disabled = old; }
 }
 async function setYear(y) {
   const soft = $("#loading"); soft.classList.add("soft"); $("#loadmsg").textContent = t("loading_year", { y }); soft.hidden = false;
   try { await loadYear(y); } catch (e) { $("#loadmsg").textContent = e.message; return; }
+  const before = { level: state.level, view: state.view, carto: state.carto };
   state.year = y;
+  yearLimits(y);
+  if (state.view !== before.view) setView(state.view);
+  if (state.level !== before.level || state.carto !== before.carto) applyLevel();
+  if (state.carto !== before.carto) document.querySelectorAll("#cartobtn").forEach((b) => b.setAttribute("aria-pressed", false));
+  updateYearControls();
   useGeo(y);
   if (state.view === "odd" && state.level === "vd") await loadOdd(y);
   if (state.view === "pred") { state.predManual.clear(); await loadPredData(); }
   if (state.sel && !byId[state.sel.lvl][state.sel.id]) state.sel = null;
   if (mapReady) { clearHover(); for (const l of LEVELS) map.getSource(l).setData(GEO(y)[l]); updateGhost(); applySelection(); }
   soft.hidden = true; soft.classList.remove("soft");
-  document.querySelectorAll("#year button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.y === y));
+  renderYearButtons();
   buildSearchIndex(); refreshAll();
 }
 
@@ -1993,6 +2082,7 @@ function rankOf(fn, level, id) {
 const ALLP = {}; let allpOpen = false;
 async function loadAllParties() {
   const k = rkey(state.year);
+  if (!ALLP[k] && isOld()) { ALLP[k] = { old: true, riket: [], lan: {}, kommun: {}, vd: {}, names: {} }; renderDetail(); return; }
   if (!ALLP[k]) { ALLP[k] = "loading"; try { ALLP[k] = await getJSON(`data/parties_${k}.json`); } catch (e) { ALLP[k] = "failed"; } renderDetail(); }
 }
 function allPartiesHtml(lvl, id, r) {
@@ -2015,7 +2105,7 @@ function allPartiesHtml(lvl, id, r) {
     const sh = (v) => { const s = 100 * v / r.v; return s >= 1 ? pct(s) : (s >= 0.01 ? fmt2(s) : "<" + fmt2(0.01)) + (lang === "sv" ? " %" : "%"); };
     inner = `<div class="allp-list">${rows.map(([n, v, c], i) => `<div class="orow"${c ? ` style="border-left-color:${c}"` : ""}><span><small>${i + 1}</small> ${esc(n)}</span><span class="n">${fmtInt(v)}</span><b class="num">${sh(v)}</b></div>`).join("")}
       ${missing > 0 ? `<div class="orow miss"><span>${esc(t("all_missing"))}</span><span class="n">${fmtInt(missing)}</span><b class="num">${sh(missing)}</b></div>` : ""}</div>
-      ${missing > 0 ? `<p class="note">${esc(t("all_missing_note", { y: state.year }))}</p>` : ""}`;
+      ${missing > 0 ? `<p class="note">${esc(t(A.old ? "all_missing_note_old" : "all_missing_note", { y: state.year }))}</p>` : ""}`;
     return `<details class="allp" open><summary>${esc(t("all_parties_n", { n: fmtInt(rows.length) }))}</summary>${inner}</details>`;
   }
   return `<details class="allp"${allpOpen ? " open" : ""}><summary>${esc(t("all_parties"))}</summary>${inner}</details>`;
@@ -2036,9 +2126,10 @@ function renderDetail() {
     body += `<div class="kpis">
       <div class="kpi"><b>${pct(to)}</b><span>${esc(t("turnout"))}</span>${top != null ? `<div class="delta">${sgn(to - top)} ${t("pp")} ${esc(t("vs", { p: py }))}</div>` : ""}</div>
       <div class="kpi"><b>${fmtInt(r.e)}</b><span>${esc(t("eligible"))}</span>${r.ep ? `<div class="delta">${sgn(100 * (r.e - r.ep) / r.ep)} % ${esc(t("vs", { p: py }))}</div>` : ""}</div>
-      <div class="kpi"><b>${fmtInt(r.t)}</b><span>${esc(t("votes_cast"))}</span><div class="delta">${fmtInt(r.b)} ${esc(t("blank"))}</div></div></div>`;
+      <div class="kpi"><b>${fmtInt(r.t)}</b><span>${esc(t("votes_cast"))}</span><div class="delta">${fmtInt(r.b)} ${esc(t(isOld() ? "invalid" : "blank"))}</div></div></div>`;
     const maxShare = Math.max(...META.parties.map((p) => Math.max(share(r, p.k) || 0, prevShare(r, p.k) || 0)), 1);
-    const rows = META.parties.map((p) => {
+    const na = R().na || [];        // parties not reported separately that year (older elections)
+    const rows = META.parties.filter((p) => !na.includes(p.k)).map((p) => {
       const s = share(r, p.k), ps = prevShare(r, p.k), i = PI[p.k], nv = r.pv[i], pv = r.pp ? r.pp[i] : null;
       const tip = p.n + ": " + t("votes_tip", { v: fmtInt(nv), y }) + (pv != null ? " · " + t("votes_tip_prev", { v: fmtInt(pv), p: py, d: (nv - pv >= 0 ? "+" : "−") + fmtInt(Math.abs(nv - pv)) }) : "");
       return `<div class="prow" title="${esc(tip)}"><span class="pk">${p.k}</span>
@@ -2056,11 +2147,20 @@ function renderDetail() {
       `<div class="orow"><span>${esc(o[1])}</span><span class="n">${fmtInt(o[2])}</span><b class="num">${pct(100 * o[2] / r.v)}</b></div>`).join("")}</div>` : "";
     const allpHtml = R().live ? "" : allPartiesHtml(lvl, id, r);
     const w = winner(r);
+    if (isOld() && lvl === "kommun") {
+      const mg = R().merged || {}, kids = Object.entries(mg).filter(([, p]) => p === id).map(([c]) => META.kommun[c]?.[0] || c);
+      if (kids.length) body += `<p class="note">${esc(t("old_merged_in", { y, k: kids.join(", "), p: META.kommun[id][0] }))}</p>`;
+    }
     const localNote = w && w.local ? `<p class="note"><b>${esc(t("largest_local", { n: w.name }))}</b></p>` : "";
     body += `<div><h3 class="sec">${esc(t("vote_share_" + state.et, { y }))} <span>${esc(prevNote)}</span></h3>${localNote}${rowsHead}${rows}<div class="prow head" style="margin-top:2px"><span></span><span>${esc(t("valid_votes"))}</span><span>${fmtInt(r.v)}</span><span></span><span></span></div>${othersHtml}${allpHtml}${bloc}</div>`;
     const SS = state.et === "RD" && (lvl === "riket" || lvl === "kommun" || lvl === "lan" || lvl === "vk") ? officialSeats(y) : null;
     if (SS && lvl === "riket") body += `<div><h3 class="sec">${esc(t(R().live ? "seats_head_live" : "seats_head", { y }))} <span>${esc(t("pr_majority"))}</span></h3>
       ${seatBarHtml(SS.a.total, t("seats_n"))}${seatsSectionHtml(SS, true)}<p class="note">${esc(t("seats_note"))}</p></div>`;
+    else if (!SS && lvl === "riket" && state.et === "RD" && isOld() && r.ms) {
+      const extra = Object.entries(r.ms_other || {}).map(([p, n]) => t("old_seats_other", { p, n })).join(" ");
+      body += `<div><h3 class="sec">${esc(t("seats_head", { y }))}</h3>${seatBarHtml(r.ms, t("seats_n"))}
+        <p class="note">${esc([t("old_seats"), extra, y === 1973 ? t("old_seats_350") : ""].filter(Boolean).join(" "))}</p></div>`;
+    }
     else if (SS) body += `<div><h3 class="sec">${esc(t("vk_head"))} <span>${esc(t("vk_head_note", { y }))}</span></h3>${vkSeatsHtml(SS, lvl, id)}</div>`;
   }
   // similarity
@@ -2094,7 +2194,7 @@ function renderDetail() {
     </div><canvas id="scatter"></canvas><p class="note" id="scnote"></p></div>`;
   body += `<div class="about"><p><b>${esc(t("sources"))}.</b> ${t("src_text")}</p><p>${esc(t("src_note"))}</p><p><b>${esc(t("priv_head"))}.</b> ${esc(t("priv_text"))}</p></div>`;
 
-  el.innerHTML = `<div>${crumbs}<div class="area-kind">${esc(kind)}${lvl === "kommun" ? " · " + esc(t("n_vd", { n: Object.values(byId.vd).filter((f) => f.properties.k === id).length })) : ""}</div><h2 class="area-name">${esc(lvl === "riket" ? t("sweden") : areaName(lvl, id))}</h2>${liveAreaNote(lvl, id)}</div>${body}`;
+  el.innerHTML = `<div>${crumbs}<div class="area-kind">${esc(kind)}${lvl === "kommun" && !isOld() ? " · " + esc(t("n_vd", { n: Object.values(byId.vd).filter((f) => f.properties.k === id).length })) : ""}</div><h2 class="area-name">${esc(lvl === "riket" ? t("sweden") : areaName(lvl, id))}</h2>${liveAreaNote(lvl, id)}</div>${body}`;
   el.querySelectorAll("[data-sel]").forEach((b) => b.addEventListener("click", () => {
     const v = b.dataset.sel; if (v === "riket") { select(null, null, false); mapReady && map.fitBounds(swedenBounds(), { padding: 24 }); return; }
     const [l, i] = v.split(":"); if (state.level !== l) setLevel(l); select(l, i);
@@ -2229,7 +2329,7 @@ function listColumns() {
     for (const s of META.stats) cols.push({ key: "s" + s.k, label: statName(s), title: statName(s), get: (id) => statsOf(L, id)?.[s.k] ?? null, fmt: (v) => fmtStat(s.k, v) });
   } else {
     cols.push({ key: "sv", label: t("c_simvote") + " " + state.year, get: (id) => dissim(rec(L, id), R().riket), fmt: fmt1 });
-    if (L !== "vd" && typeYears().every((y) => RES[rkey(y)])) cols.push({ key: "sva", label: t("c_simvote_avg"), get: (id) => { let s = 0, n = 0; for (const y of typeYears()) { const rr = RES[rkey(y)]; const v = dissim(rec(L, id, y), rr.riket); if (v != null) { s += v; n++; } } return n ? s / n : null; }, fmt: fmt1 });
+    if (L !== "vd" && mainYears().every((y) => RES[rkey(y)])) cols.push({ key: "sva", label: t("c_simvote_avg"), get: (id) => { let s = 0, n = 0; for (const y of mainYears()) { const rr = RES[rkey(y)]; const v = dissim(rec(L, id, y), rr.riket); if (v != null) { s += v; n++; } } return n ? s / n : null; }, fmt: fmt1 });
     cols.push({ key: "sd", label: t("c_simdemo"), get: (id) => simDemo(L, id), fmt: fmt2 });
   }
   return cols;
@@ -2438,7 +2538,7 @@ async function loadPredData() {
   const ys = [state.year, state.year - 4].filter((y) => typeYears().includes(y));
   await Promise.all(ys.map(async (y) => {
     const k = rkey(y); if (!RES[k]) RES[k] = await getJSON(`data/results_${k}.json`);
-    if (NN[y] === undefined && y >= 2014) { try { NN[y] = await getJSON(`data/nn_${y}.json`); } catch (e) { NN[y] = null; } }
+    if (NN[y] === undefined && y >= 2010) { try { NN[y] = await getJSON(`data/nn_${y}.json`); } catch (e) { NN[y] = null; } }
   }));
 }
 const PREP = {};
@@ -2691,7 +2791,7 @@ function renderPred() {
 }
 // ======================================================================
 // Riksdag seats, as in the election law: fixed seats per constituency (riksdagsvalkrets), a national total
-// distribution, then the 39 adjustment seats. Reproduces the official result for 2010-2026.
+// distribution, then the 39 adjustment seats. Reproduces the official result for 2006-2026.
 // ======================================================================
 let SEATS = null;
 const SEAT_CACHE = {};
@@ -2926,7 +3026,7 @@ function applyLang() {
   $("#map").setAttribute("aria-label", t("map_label"));
   $("#osmbtn").title = t("osm_title"); $("#cartobtn").title = t("carto_title");
   $("#parties").setAttribute("aria-label", t("party"));
-  renderYearButtons(); updateBallot();
+  renderYearButtons(); updateBallot(); updateYearControls();
   modeOptions(); buildSearchIndex();
 }
 function initControls() {
