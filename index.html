@@ -1739,7 +1739,8 @@ function select(lvl, id, zoom = true, from = "other") {
 // ======================================================================
 // Data loading
 // ======================================================================
-const getJSON = (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(t("err_data", { s: u + " " + r.status })); return r.json(); });
+// "no-cache": the browser always checks with the server (a quick 304 if unchanged), so new data shows up without a hard reload
+const getJSON = (u) => fetch(u, { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error(t("err_data", { s: u + " " + r.status })); return r.json(); });
 // ---- Election night: data/live.json (written by scripts/live/valnatt.py) says which election is being counted.
 // Results for that year are fetched past the browser/CDN cache and refreshed every minute while counting goes on.
 let LIVE = null, liveTimer = null;
