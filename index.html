@@ -559,7 +559,7 @@ const T = {
     old_more: "Äldre val", old_less: "Färre val", old_title: "Val 1973–2002 per kommun och län (SCB)",
     old_note: "Äldre val ({y}): bara län och kommuner, från SCB. Kommuner som bildats senare visas ihop med kommunen de då var en del av, och gränserna är dagens.",
     old_sd: "Sverigedemokraterna redovisas inte för sig i SCB:s tabell för det här valet; rösterna ingår i övriga partier.",
-    old_nyd: "Ny demokrati ingår i övriga partier (1991: 6,7 % och 25 mandat).", old_kd85: "1985 gick KD till val på Centerpartiets lista; rösterna räknas till C.", old_rf: "Göteborg, Malmö och Gotland hörde inte till något landsting och saknar därför landstingsval.",
+    old_nyd: "Ny demokrati ingår i övriga partier (1991: 6,7 % och 25 mandat).", old_nyd_panel: "Ny demokrati har ingen egen färg på kartan men visas under övriga partier i panelen (1991: 6,7 % och 25 mandat).", old_kd85: "1985 gick KD till val på Centerpartiets lista; rösterna räknas till C.", old_rf: "Göteborg, Malmö och Gotland hörde inte till något landsting och saknar därför landstingsval.",
     old_merged: "{y} ingick {k} i {p}.", old_merged_in: "I {y} års siffror ingår även {k}, som då var en del av {p}.",
     old_seats: "Officiell mandatfördelning (SCB).", old_seats_other: "Därtill {p}: {n} mandat.", old_seats_350: "Riksdagen hade 350 mandat 1973 (349 från 1976).",
     old_unavail: "Finns inte för äldre val (bara län och kommuner).", pred_unavail: "Valvakan behöver distriktsresultat från förra valet, och de finns först från 2006.", all_missing_note_old: "SCB:s tabeller för {y} redovisar bara riksdagspartierna var för sig; övriga partier finns bara som en summa.",
@@ -713,7 +713,7 @@ const T = {
     old_more: "Older elections", old_less: "Fewer elections", old_title: "Elections 1973–2002 by municipality and county (SCB)",
     old_note: "Older election ({y}): counties and municipalities only, from SCB. Municipalities formed later are shown together with the one they were part of, on today's borders.",
     old_sd: "SCB's table does not report the Sweden Democrats separately for this election; their votes are among the other parties.",
-    old_nyd: "New Democracy is among the other parties (1991: 6.7% and 25 seats).", old_kd85: "In 1985 KD stood on the Centre Party's list; its votes count as C.", old_rf: "Gothenburg, Malmö and Gotland were not part of any county council, so they had no county council election.",
+    old_nyd: "New Democracy is among the other parties (1991: 6.7% and 25 seats).", old_nyd_panel: "New Democracy has no colour of its own on the map but is shown under other parties in the panel (1991: 6.7% and 25 seats).", old_kd85: "In 1985 KD stood on the Centre Party's list; its votes count as C.", old_rf: "Gothenburg, Malmö and Gotland were not part of any county council, so they had no county council election.",
     old_merged: "In {y}, {k} was part of {p}.", old_merged_in: "The {y} figures also include {k}, then part of {p}.",
     old_seats: "Official seat distribution (SCB).", old_seats_other: "Also {p}: {n} seats.", old_seats_350: "The Riksdag had 350 seats in 1973 (349 from 1976).",
     old_unavail: "Not available for older elections (counties and municipalities only).", pred_unavail: "The forecast needs district results from the previous election, which exist only from 2006.", all_missing_note_old: "SCB's tables for {y} list only the Riksdag parties separately; other parties are given only as a total.",
@@ -1680,7 +1680,7 @@ function renderLegend() {
     notes.push(t("old_note", { y: state.year }));
     const na = R().na || [];
     if (na.includes("SD") && state.year >= 1988 && (mode === "winner" || (mode === "share" || mode === "change") && state.party === "SD")) notes.push(t("old_sd"));
-    if ((state.year === 1991 || state.year === 1994) && mode === "winner") notes.push(t("old_nyd"));
+    if ((state.year === 1991 || state.year === 1994) && mode === "winner") notes.push(t(state.et === "RF" ? "old_nyd" : "old_nyd_panel"));
     if (state.et === "RF" && state.year < 1998) notes.push(t("old_rf"));
     if (na.includes("KD") && (mode === "winner" || state.party === "KD" || state.party === "C")) notes.push(t("old_kd85"));
   }
@@ -2102,7 +2102,8 @@ function allPartiesHtml(lvl, id, r) {
   else if (A === "failed") inner = `<p class="note">${esc(t("all_failed"))}</p>`;
   else {
     let lst;
-    if (lvl === "riket") lst = A.riket;
+    if (A.old) lst = (r.o || []).map((o) => { A.names[o[0]] = o[1]; return [o[0], o[2]]; });   // older elections: the named parties in the results file (Ny Demokrati)
+    else if (lvl === "riket") lst = A.riket;
     else if (lvl === "vk") {
       const mp = vkMap(state.year), acc = {};
       for (const [k, l] of Object.entries(A.kommun)) if (mp[k] === id) for (const [p, v] of l) acc[p] = (acc[p] || 0) + v;
